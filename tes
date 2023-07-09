@@ -1,0 +1,2 @@
+cd $TDB
+iarx -s $* tick |secs |map pcs |map -td tes |tock -r |s2d

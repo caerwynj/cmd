@@ -1,0 +1,16 @@
+#!/home/xcs0998/bin/rc
+
+if (~ $#* 1) {
+	tbl=$1
+} else {
+	echo Usage: R TABLENAME >[1=2]; exit
+}
+
+if (test -f $tbl) {
+	cat $tbl
+} else {
+db/desc $tbl
+fsql xcs0998 changeme <<%
+select * from $tbl;
+%
+}

@@ -1,0 +1,11 @@
+#!/home/xcs0998/bin/rc
+
+SQLPATH=$h/sql
+
+sqlplus -silent $user^/^$passwd^'@'^$TWO_TASK $*|sed '
+/^$/d
+/---/d
+s/[ 	][ 	]*/ /g
+s/^[ 	]*//
+s/ ,/,/g
+s/, /,/g'

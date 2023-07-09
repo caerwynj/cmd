@@ -1,0 +1,5 @@
+awk '
+BEGIN{FS="\t"; min=1000}
+$3 < min && min > 0{min = $3}
+END{print min}
+'

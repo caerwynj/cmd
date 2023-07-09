@@ -1,0 +1,22 @@
+#!/bin/perl
+# redep - regular expression dependencies
+# first arg is a file containing a list of reg expressions, one per line.
+# then all other files are read if the regex is found in the file
+# a two column output of filename and matching regexp is printed
+
+my $procs = shift;
+
+  open(PATTERN, $procs);
+  @patterns = <PATTERN>;
+  chomp @patterns;
+  while ($line = <>) {
+    $filename = $ARGV;
+    $filename =~ s{^.*/}{};
+    #$filename =~ s/\.c//;
+    chomp $line;
+    foreach $pattern (@patterns) {
+      if ($line =~ /\b$pattern\b/) {
+        print "$filename $pattern\n";
+      }
+    }
+  }

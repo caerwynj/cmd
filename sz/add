@@ -1,0 +1,24 @@
+#!/home/xcs0998/bin/rc
+# sz/add - add size information to project log
+
+if (! ~ $#* 3) {
+	echo Usage: $0 file ver n,m >[1=2]; exit 1
+}
+pwp=`tm/pwp
+if (test -f $1) {
+	ad = `` (,) {echo -n $3}
+	add =  '+' ^ $ad(1)
+	minus = '-' ^ $ad(2)
+ted <<EOF
+B touch
+$pwp	$1
+B fver
+$1	$2
+B change
+$1	$add
+$1	$minus
+EOF
+
+} else {
+	echo $1 not a valid file >[1=2]; exit 1
+}

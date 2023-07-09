@@ -1,0 +1,2 @@
+#!/bin/sh
+GET 'http://quote.yahoo.com/d/quotes.csv?s=LU&f=sl1d1t1c1ohgv&e=.csv'

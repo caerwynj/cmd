@@ -1,0 +1,118 @@
+#!/usr/bin/perl -w
+'di';
+'ig00';
+# See usage() for syntax
+
+use Getopt::Long;
+
+use DBI;
+
+use strict;
+
+# Default values for options
+my ( $trace, $inst, $cache, $delim, $headers, $null_str ) =
+   ( 0, '', '', ",", 0, '' );
+
+# Syntax description
+sub usage {
+    my ( $sOpt, $sVal, @sMsg ) = @_;
+
+    my $sHelpText = <<END_HELP_END;
+Execute a SQL statement
+syntax: $0 [options] name pass [stmt]
+Options:
+   -h          Write this help to STDOUT
+   -t trace    trace control string
+   -b base     database to use (default $inst)
+   -c cache    SQL fetch cache size in rows
+   -d delim    specifies the field delimiter (default ',')
+   -H          add headers
+   -n string   replace NULL fields by string
+Arguments:
+   name Oracle username
+   pass Password
+   stmt Oracle statement to be executed
+        it is read from STDIN if not given on command line
+END_HELP_END
+# Balance quotes in here document # ' # "
+
+    my $nRet = 'help' eq $sOpt ? 0 : 0 + $sVal;
+    my $fh   = $nRet ? *STDERR : *STDOUT;
+    foreach ( @sMsg, $sHelpText ) { s/\s+$//; print $fh "$_\n"; }
+    exit $nRet;
+}
+
+# Get options and arguments
+Getopt::Long::config( qw( no_ignore_case no_auto_abbrev require_order ) );
+GetOptions(
+    'help|h'    => \&usage,
+    'trace|t=i' => \$trace,
+    'base|b=s'  => \$inst,
+    'cache|c=i' => \$cache,
+    'delim|d=s' => \$delim,
+    'Headers!'  => \$headers, 'H!' => \$headers,
+    'null|n=s'  => \$null_str,
+ ) or usage( 'die', 1 );
+
+usage( 'die', 1, 'Username and password are required' ) if 2 > @ARGV;
+my ( $user, $pass) = @ARGV;
+
+$\ = "\n";      # each record terminated with newline
+$, = $delim;    # set column delimiter
+
+# Set trace level
+DBI->trace( $trace );
+
+# Connect to database
+my $dbh;
+if ($ENV{DBMS} eq "oracle") {
+    if (! $inst) {
+        $inst = $ENV{TWO_TASK} || $ENV{ORACLE_SID} || '';
+    }
+    $dbh = DBI->connect( "dbi:Oracle:$inst", $user, $pass,
+        { AutoCommit => 0, RaiseError => 0, PrintError => 1 } )
+        or die $DBI::errstr;
+} else {
+    if (! $inst) {
+        $inst = $ENV{DS_DATABASE} || '';
+    }
+    $dbh = DBI->connect( "dbi:Sybase:database=$inst", $user, $pass,
+        { AutoCommit => 0, RaiseError => 0, PrintError => 1 } )
+        or die $DBI::errstr;
+}
+
+$dbh->{RowCacheSize} = $cache if $cache; # set fetch cache
+
+my $stmt = "";
+my $line = "";
+while (defined($line = <STDIN>)) {
+    if ($line eq "/\n") {
+        # Start statement
+        my $sth = $dbh->prepare($stmt);
+        $sth->execute;
+        my $nfields = $sth->{NUM_OF_FIELDS};
+        
+        # print out any information which comes back
+        if ( $nfields ) {
+            # the statement has output columns
+            my ( @col, $col );
+            my @name = @{$sth->{NAME}};
+            if ( $headers ) {
+                # Simple headers with underlines
+                print map { s/\s+$//; lc $_ } @name;
+                #print map { tr//-/c;  $_ } @name;
+            }
+            # Associate @col with output columns and fetch the rows
+            $sth->bind_columns( {}, \( @col[0 .. $#name] ) );
+            while ( $sth->fetch ) {
+                foreach $col ( @col ) { $col = $null_str if ! defined $col; }
+                print @col;
+            }
+        }
+        $sth->finish;
+	$stmt = "";
+    } else {
+	$stmt = join "\n", ($stmt, $line);
+    }
+}
+$dbh->disconnect;

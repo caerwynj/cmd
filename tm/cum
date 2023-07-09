@@ -1,0 +1,4 @@
+awk '
+{print $1, $2 + last
+last = $2 + last}
+'

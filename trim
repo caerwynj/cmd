@@ -1,0 +1,4 @@
+awk 'BEGIN{FS="\t";OFS="\t"}{
+for (i=2; i<=NF; i++)
+	printf("%s%c", $i, (NF==i?"\n":OFS))
+}'

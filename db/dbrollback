@@ -1,0 +1,14 @@
+#!/bin/sh
+# rollback - restore tables after a previous savepoint
+
+case $# in 
+1) name=$1;;
+*) echo 'Usage: rollback name' 1>&2; exit 1;;
+esac
+
+for i in *.${name}
+do
+	tbl=`basename $i .$name`
+	dbdel $tbl
+	dbini $tbl $i
+done

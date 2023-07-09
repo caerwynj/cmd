@@ -1,0 +1,19 @@
+#!/bin/sh
+# path.awk - print out matching paths in parse tree
+# should walk tree from top down building path strings on the
+# way like unix file names; and attempt to match the input arg
+
+re=$1 ; shift
+
+awk '
+BEGIN {FS=","}
+{
+	s[$1] = $0
+	path = "^"
+	for (i = 0; i <= $1; i++) 
+		path = path ":" s[i] 
+#	print "debug: " path
+	if (path ~ /'$re'/) 
+		for (i=0;i<=$1;i++)
+			print s[i]
+}' $*

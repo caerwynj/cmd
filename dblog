@@ -1,0 +1,15 @@
+#!/home/xcs0998/bin/rc
+
+rlog $h/ped/RCS/* | nawk '
+BEGIN{OFS="\t"}
+/Working/ {file=$3}
+/revision / {rev=$2}
+/date/ {sub(";", "", $3); 
+	yr=$2
+	day=$3
+	add=$9
+	minus=$10
+	getline
+	secs=$0
+	print secs, file, rev}
+' | sort -n

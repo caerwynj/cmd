@@ -1,0 +1,59 @@
+#!/home/xcs0998/bin/rc
+# update the status of a task
+
+if (~ $#* 0) {
+	echo 'usage: update task state args ...' >[1=2]; exit 1
+}
+root=$h/db
+tid=$1
+now=`{date -n}
+if (!test -d $root/$tid) {
+	echo invalid directory >[1=2]; exit 1
+}
+if (!test -f $root/$tid/status) {
+	echo $now 0 0 New xcs0998 $tid $now 0 10> $root/$tid/status
+	echo $now $tid /alive >> $root/status.map
+}
+
+# last actual target state user task start end pri alarm
+st=`{cat $root/$tid/status}
+if (~ $st(4) Running) {
+	actual=`{expr $now - $st(1) + $st(2)}
+} else {
+	actual=$st(2)
+}
+
+targ=$st(3)
+state=$st(4)
+usr=$st(5)
+start=$st(7)
+if (~ $st(8) ()) {
+	end=0
+} else {
+	end=$st(8)
+}
+if (~ $st(9) ()) {
+	pri=10
+} else {
+	pri=$st(9)
+}
+alarm=$st(10)
+
+switch($2) {
+	case Ready Running Wakeme Queueing New
+		state=$2
+	case Moribund
+		state=$2
+		end=$now
+		echo $now $tid /dead >> $root/status.map
+	case targ
+		targ=`{expr $3 '*' 60 '*' 60}
+		echo $now $tid $3 >> $root/est.map
+	case alarm
+		alarm=`{expr $3 '*' 60 '*' 60 '*' 24 '+' $now}
+	case pri
+		pri=$3
+	case *
+		state=$st(4)
+}
+echo $now $actual $targ $state $usr $tid $start $end $pri $alarm> $root/$tid/status

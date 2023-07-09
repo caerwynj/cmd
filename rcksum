@@ -1,0 +1,28 @@
+#!/bin/sh
+# rcksum - report a cksum for a random selection of columns in
+# the database
+
+case $# in
+6) ;;
+*) echo 'Usage: rcksum SERVER DB USER PASS randomlist schemadiff' 1>&2; exit 1;;
+esac
+
+SERVER=$1
+DB=$2
+USER=$3
+PASS=$4
+RAN=$5
+DIFF=$6
+
+IFS=','
+randcol $RAN $DIFF| \
+while read tbl col
+do
+  echo "$tbl $col \c"
+  echo "select $col from $tbl \n/\n" | query $SERVER $DB $USER $PASS | cksum
+
+# this generates the shell script instead of actually executing the cksum
+#  echo "echo \"$tbl $col \\\c\""
+#  echo "echo \"select $col from $tbl \\\n/\\\n\" | query $SERVER $DB $USER $PASS | cksum"
+done
+

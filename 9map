@@ -1,0 +1,3 @@
+#!/home/xcs0998/bin/rc
+
+for (i in `{du -a | grep f00| awk '{print $2}'}) {mv $i `{basename -d $i}^/^`{grep  `{echo `{basename $i} | tr a-z A-Z} $h/sys/_conform.map | awk '{print $2}'}}

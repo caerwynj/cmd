@@ -1,0 +1,12 @@
+#!/bin/sh
+
+# remove the adm tables from the cust diff file
+adm=/tmp/$$.adm.cut
+cust=/tmp/$$.cust.cut
+
+trap 'rm -f $adm $cust; exit 1' 1 2 15
+
+tblcol $1 | sort > $adm
+tblcol $2 | sort > $cust
+comm -13 $adm $cust | cut -d',' -f1 | sort | uniq | xargs -l1 -i ptree {} $2
+rm -f $adm $cust

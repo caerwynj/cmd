@@ -1,0 +1,23 @@
+#!/bin/sh
+
+case $# in
+1) tbl=$1;;
+*) echo 'usage: dbdef TABLE' 1>&2; exit;;
+esac
+
+if [ -n "$DUMPSCHEMA" ] 
+then
+ptree $tbl $DUMPSCHEMA | tac | awk -F ',' '
+BEGIN {OFS=","}
+/,typ/ {typ=$3} 
+/,col/ {print $3, typ} '
+
+else
+
+dumpschema.$RDB_DBMS -n $tbl $RDB_SERV $RDB_CUST $RDB_USER $RDB_PASS | tac \
+| awk -F ',' '
+BEGIN {OFS=","}
+/,typ/ {typ=$3}
+/,col/ {print $3, typ} '
+
+fi

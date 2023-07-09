@@ -1,0 +1,12 @@
+#!/home/xcs0998/bin/rc
+
+cd $h/db
+du -n $1.* | awk '
+/idx/{idx=$1; ifile=$2}
+/map/{map=$1; mfile=$2}
+END{
+	if(idx<map){
+		diff=map-idx
+		system("tail -"diff"c "mfile "|mkidx | sort -m -o"ifile" "ifile" -")
+	}
+}'

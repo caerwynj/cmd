@@ -1,0 +1,25 @@
+#!/home/xcs0998/bin/rc
+# time series analysis
+# a periodic slice 2,4 7 'cmd' ; analagous to xargs
+
+if(!~ $#* 3){
+	echo 'usage: series range period cmd' >[1=2]
+	exit 1
+}
+t=`{nrange $1}
+awk -v 'beg='$t(1) -v 'end='$t(2) -v 'per='$2 -v 'cmd='$3 '
+BEGIN {
+	toggle=0
+	mul=60*60*24
+#	print beg, end, per, mul,cmd
+	pair[1]=beg
+	for(i=beg; i<=end; i+=per*mul){
+		pair[toggle]=i
+#		print pair[toggle?0:1], pair[toggle]
+		system("iarx -n -r "pair[toggle] " "pair[toggle?0:1]" /home/xcs0998/ped/tick "cmd)
+		toggle=toggle?0:1
+		print
+	}
+	exit
+}
+'

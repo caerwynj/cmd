@@ -1,0 +1,60 @@
+#!/home/xcs0998/bin/rc
+
+awk '
+BEGIN{
+	FS=OFS="\t"
+	for (i=1; ARGV[i] ~ /^-/; i++){
+		split(ARGV[i], f, "")
+		for(i in f)
+			flags[f[i]] = 1
+		ARGV[i]=""
+	}
+	if(i >= ARGC)
+		ARGV[ARGC++] = "-"
+}
+{	tm[$2] += $3
+	ldate[$2]=$1
+	if(flags["r"] || flags["p"]){
+		d = dirnm($2)
+		while (d != "/") {
+			tm[d] +=$3
+			ldate[d] = $1
+			d = dirnm(d)
+		}
+		if (d!=$2){
+			tm[d] +=$3
+			ldate[d] = $1
+		}
+	}
+}
+
+function hms(n) {
+	s = n % 60
+	m = int(n / 60) % 60
+	h = int(int(n / 60) / 60) # % 60
+	return h " " m " " s
+}
+
+function dirnm(n,   s,arr,i,j) {
+	j = split(n, arr, "/")
+	for (i=1; i<j; i++) {
+		s = s "/" arr[i]
+	}
+	if (j==0)
+		s="/"
+	gsub("//", "/", s)
+	return s
+}
+END {
+	for (i in tm) {
+		hms(tm[i])
+		if(flags["h"])
+			printf("%s\t%s\t%3d:%02d:%02d\n", ldate[i], i, h, m, s) | "sort -k 2,2"
+		else if(flags["p"]){
+			parent=dirnm(i)
+			printf("%s\t%s\t%f\n", ldate[i], i, tm[i]/tm[parent]) |"sort -k 2.1b,2.6b -k 3.3bn,3.8bn"
+		}else
+			printf("%s\t%s\t%s\n",ldate[i], i, tm[i]) | "sort -k 2,2"
+	}
+}
+' $*

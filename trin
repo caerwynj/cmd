@@ -1,0 +1,9 @@
+#!/home/xcs0998/bin/rc
+
+if(!~ $#* 4){
+	echo 'usage: trin time aval bval rel' >[1=2]
+	exit 1
+}
+tab='	'
+echo $1 ^ '	' ^ $2 ^ '	' ^ $3 | sort -t'	' -n -m -o $h/ped/$4 - $h/ped/$4
+echo $2 ^ '	' ^ $3 ^ '	' ^ $1 | sort  -t'	' -m -k 1,1 -k 3n,3n -o $h/ped/$4.idx - $h/ped/$4.idx

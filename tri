@@ -1,0 +1,75 @@
+#!/home/xcs0998/bin/rc
+#inversion query
+inv=0
+isuff=''
+while (~ $1 -*){
+	switch ($1){
+	case -x
+		xflag='-x'
+	case -n
+		nflag='-n'
+	case -i
+		inv=$2
+		isuff='.'$2
+		shift
+	case -2
+		inv=2
+		isuff='.2'
+	case -3
+		inv=3
+		isuff='.3'
+	case -4
+		inv=4
+		isuff='.4'
+	case -r
+		rflag=('-r' $2)
+		shift
+	case -s -0 -1
+		if (~ $1 -1){
+			inv=1
+			isuff='.1'
+		}
+		if (~ $2 [0-9,+-.';']*){
+			r=$2
+			shift
+		}
+		secs=`{nrange $r}
+		shift
+		rflag=('-r' $secs(2))
+		nflag='-n'
+		*=('-s' $secs(1) $*)
+	}
+	shift
+}
+
+if(~ $#* 0){
+	echo 'usage: iarx [-x] [-n] -0-4 key [file ...]' >[1=2]
+	exit 1
+}
+key=$1
+shift
+if (~ $#* 0){
+	awk -v 'inv='$inv -v 'key='$key -v 'range='$secs(2) '
+BEGIN {
+	FS=OFS="\t"
+	if(range != "") {
+		rflag=1
+	} else
+		key = "^" key
+}
+!rflag{	if ($inv ~ key) print}
+rflag{ 	if ($inv >= key && $inv <= range) print}
+'
+} else{
+	mkinv $inv $*
+	for(i in $*){
+		if(~ $inv 0){
+			look $xflag $nflag $rflag -t'	' $key $i ^ $isuff \
+				|awk 'BEGIN{OFS="\t";FS="\t"}{print $1, $3, $4}'
+		}else if(~ $inv 4){
+			look $xflag $nflag $rflag -t '' $key $i ^ $isuff |tog $inv
+		}else{
+			look $xflag $nflag $rflag -t'	' $key $i ^ $isuff |tog $inv
+		}
+	}
+}

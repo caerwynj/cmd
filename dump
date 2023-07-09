@@ -1,0 +1,28 @@
+#!/home/xcs0998/bin/rc
+# dump - copy files modified in last 24hrs to dump/
+smon='s/Jan/01/
+	s/Feb/02/
+	s/Mar/03/
+	s/Apr/04/
+	s/May/05/
+	s/Jun/06/
+	s/Jul/07/
+	s/Aug/08/
+	s/Sep/09/
+	s/Oct/10/
+	s/Nov/11/
+	s/Dec/12/'
+
+dmp=$h/dump/ ^ `{date |9sed -e 's%... (...) (..) ..:..:.. ... (....)%\3/\1\2%' -e 'y/ /0/' -e $smon}
+t = `{expr `{date -n} - 24 '*' 60 '*' 60}
+for (i in `{du -a -t $* | awk -v t'='$t '$1 > t {print $2}'}) {
+	if (test -f $i) {
+		echo $i
+		d=`{basename -d $i}
+		if (! test -d $dmp/$d)
+			mkdir -p $dmp/$d
+		cp -p $i $dmp/$d/
+		techo `{date -n} $i `{du -n $i |awk '{print $1}'} >> $h/ped/History
+	}
+}
+

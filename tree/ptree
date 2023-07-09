@@ -1,0 +1,23 @@
+#!/bin/sh
+# prints out a tree for matching input value
+# ie prints out a table and all columns and attributes for given table name
+
+reg=$1
+shift
+awk '
+BEGIN {FS = "," 
+    ok = 0}
+
+$1 == 0 { # top of tree
+    if (ok == 1) {
+        ok = 0
+	exit 
+    }
+    if ($3 == "'$reg'")
+        ok = 1
+}
+
+{ if (ok == 1)
+    print
+}' $*
+

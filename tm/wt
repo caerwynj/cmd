@@ -1,0 +1,14 @@
+#!/home/xcs0998/bin/rc
+
+awk '
+{
+	cnt++
+	opened += $2
+	closed += $3
+}
+END { 
+print opened / cnt, closed / cnt, "wait-time:", (opened/cnt) / (closed/cnt ? closed/cnt: 0.000001), "days" 
+}
+'
+
+

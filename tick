@@ -1,0 +1,12 @@
+#!/home/xcs0998/bin/rc
+# tick - time accounting
+
+if (~ $#* 0) {
+	echo Usage: tick pathname|state >[1=2]; exit 1
+}
+dir = `{cleanname -d `tm/pwp $1}
+ted <<EOF
+B tick
+$dir
+EOF
+

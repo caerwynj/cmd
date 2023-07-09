@@ -1,0 +1,30 @@
+#!/home/xcs0998/bin/rc
+
+if (!~ $#* 2) {
+	echo Usage: `{basename $0}  headline pcs>[1=2]; exit 1
+}
+
+now=`{date -n}
+cd `tm/pwd
+seq = `{next .}
+mkdir $seq
+cd $seq
+echo $1 > head
+task= `tm/pwp ^/$seq
+echo $task
+text= '.' ^ $task ^ '/text'
+
+ted << EOF
+when
+mk task $task
+B stat
+$task	/alive
+B desc
+$task	$1
+B pcs
+$task	$2
+B Text
+$task	$text
+EOF
+
+touch text

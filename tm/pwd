@@ -1,0 +1,4 @@
+#!/home/xcs0998/bin/rc
+# pwd - print working directory
+
+cleanname $h/db/ ^ `tm/pwp

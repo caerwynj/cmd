@@ -1,0 +1,27 @@
+#!/home/xcs0998/bin/rc
+
+if(!~ $#* 1){
+	echo 'usage: trans relation' >[1=2]
+	exit 1
+}
+tmp=/tmp/trans.$pid
+cat > $tmp
+cd $h/ped
+arx -x $1 dbver | sort -rn | awk -v 'tmp='$tmp '
+BEGIN{FS="\t"
+	"date -n" |getline now; close("date -n")
+}
+NR==1{	pair[0]=$3; toggle = 1; file=$2
+	dt[0]=$1
+	system("rcsdiff	-q -r" pair[0] " -n " $2 " |sort| /bin/comm -12 - "tmp "|eff "now)
+}
+NR!=1{
+	pair[toggle]=$3
+	dt[toggle]=$1
+	system("rcsdiff	-q -r" pair[toggle] " -r" pair[toggle ? 0 : 1] " -n " $2 " |sort| /bin/comm -12 - "tmp "|eff "dt[toggle?0:1])
+	toggle = toggle ? 0 : 1
+}
+END{system("co -q -r1.1 -p " file " |sort| /bin/comm -12 - "tmp " |eff "dt[toggle?0:1])}
+'
+
+rm -f $tmp

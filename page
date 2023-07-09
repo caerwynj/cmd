@@ -1,0 +1,1 @@
+ghostview -nolabels -notitle -nodate -nolocator $*

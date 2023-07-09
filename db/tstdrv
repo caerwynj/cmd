@@ -1,0 +1,110 @@
+#!/usr/bin/perl -w
+
+use lib '/users/caerwyn/pm';
+use File::Basename;
+use DBI;
+use TestTool;
+use strict;
+
+my ($user, $passwd, $dir) = @ARGV;
+
+if (defined($dir) && defined($user) && defined($passwd)) {
+	tlogin($user, $passwd);
+	$dir =~ s|//+|/|;
+	my @elems = split '/', $dir;
+	my $nelem = shift(@elems);
+	run_tst("$nelem", @elems);
+	tlogoff();
+} else {
+	print "usage: tsh user passwd filename.t\n";
+}
+
+sub creat_run {
+	my $tree = shift;
+
+	if (-f $tree) {
+		cat_file($tree);
+    	} elsif ( -d $tree ) {
+		my $ret = 0;
+		chdir $tree or warn "Can't cd to $tree: $!\n";
+		print `pwd`;
+		if (-f "begin") {
+			$ret = cat_file("begin");
+			print "begin ret: $ret\n";
+		}
+		if (!$ret) {	
+			opendir WALK_TREE_DIR, "./" || 
+				die "Can't opendir $tree: $!";
+			my @branches = sort grep { /\.t$/ } 
+				readdir (WALK_TREE_DIR);
+			closedir WALK_TREE_DIR;
+			for my $subtree ( @branches ) {
+				creat_run("$subtree");	
+			}
+		}
+		if (-f "end") {
+			cat_file("end");
+		}
+		chdir ".." or warn "Can't cd to parent: $!\n";
+		print `pwd`;
+	} else {
+		print "do not know type of $tree\n";
+	}
+}
+
+sub run_tst {
+	my ($wd, @elems) = @_;
+	my $nelem = shift(@elems);
+	my $parent = `dirname $wd`;
+	chomp($parent);
+
+	if (-f "$wd") {
+		cat_file("$wd");
+	} elsif (!defined($nelem) && -d $wd && ($wd !~ /^.*\.t$/)) {
+		# last directory not .t type so do nothing
+	} elsif (defined($nelem) && -d $wd && ($wd !~ /^.*\.t$/)) {
+		# directory not .t type so skip to next one
+		chdir $wd or warn "Can't cd to $wd: $!\n";
+		print `pwd`;
+		run_tst("$nelem", @elems);
+		chdir ".." or warn "Can't cd to ..: $!\n";
+		print `pwd`;
+	} elsif (!defined($nelem) && -d $wd) {
+		creat_run($wd);
+	} elsif (defined($nelem) && -d "$wd") {
+		my $ret = 0;
+		chdir $wd or warn "Can't cd to $wd: $!\n";
+		print `pwd`;
+		if (-f "begin") {
+			$ret = cat_file("begin");
+			print "begin: $ret\n";
+		}
+		if (!$ret) {
+			run_tst("$nelem", @elems);
+		}
+		if (-f "end") {
+			cat_file("end");
+		}
+		chdir ".." or warn "Can't cd to parent: $!\n";
+		print `pwd`;
+	} elsif (defined($nelem) && $wd eq "") {
+		my $cwd = `pwd`;
+		chdir "/";
+		print "/\n";
+		run_tst($nelem, @elems);
+		chdir $cwd;
+	} else {
+		print "can not find $wd\n";
+	}
+}
+
+sub cat_file {
+	my $file = shift;
+	
+	open CAT, $file || die "Can't open $file: $!";
+	my @cmds = <CAT>;
+	my $cmd = join "\n", @cmds;
+	close CAT;
+	eval $cmd;
+}
+

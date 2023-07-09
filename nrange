@@ -1,0 +1,126 @@
+awk '
+BEGIN{
+	smon["Jan"]="01";smon["Feb"]="02";smon["Mar"]="03"
+	smon["Apr"]="04";smon["May"]="05";smon["Jun"]="06"
+	smon["Jul"]="06";smon["Aug"]="08";smon["Sep"]="09"
+	smon["Oct"]="10";smon["Nov"]="11";smon["Dec"]="12"
+	line = ARGV[1]
+	program()
+}
+
+func advance() {      # lexical analyzer; returns next token
+    if (tok == "(eof)") return "(eof)"
+    if (length(line) == 0)
+            return tok = "(eof)"
+    sub(/^[ \t]+/, "", line)   # remove white space
+    if (match(line, /^[A-Za-z_][A-Za-z_0-9]*/) ||    # identifier
+        match(line, /^[0-9]+/) ||  # number
+        match(line, /^(<|<=|==|!=|>=|>)/) ||         # relational
+        match(line, /^./)) {                    # everything else
+            tok = substr(line, 1, RLENGTH)
+            line = substr(line, RLENGTH+1)
+            return tok
+        }
+    error("line " NR " incomprehensible at " line)
+}
+
+func program(){
+	daten="date -n"
+	daten | getline now
+	close(daten)
+	advance()
+	while(tok != "(eof)") {
+		addr1= simpleaddr()
+		if(tok == ","){
+			eat(",");
+			addr2=simpleaddr();
+			if(addr1 == "")
+				addr1 = 0
+			if(addr2 == "")
+				addr2 = setdot("20300101")
+		} else if(tok == ";"){
+			eat(";");
+			if(addr1 == "")
+				addr = 0
+			now=addr1
+			addr2 = simpleaddr()
+			if(addr2 == "")
+				addr2 = setdot("20300101")
+		} else {
+			addr2 = adddot(addr1, 1)
+		}
+		print addr1,addr2
+	}
+	if (addr1 == "" && addr2 == ""){
+		addr1 = setdot("")
+		addr2 = adddot(addr1, 1)
+		print addr1, addr2
+	}
+}
+
+func eat(s) {     # read next token if s == tok
+    if (tok != s) error("line " NF ": saw " tok ", expected " s)
+    advance()
+}
+
+func simpleaddr(){
+	# 1+2 | 1+ | +1 | . | .+1 
+	addr=""
+	if(tok ~ /[0-9]+/ || tok == "."){
+		addr = setdot(tok)
+		advance()
+	}
+	if(tok == "+" || tok == "-"){
+		sign = tok
+		if(addr=="")
+			addr=setdot(".")
+		advance()
+		if(tok ~ /[0-9]+/) {
+			addr = adddot(addr, sign tok)
+			advance()
+		}else {
+			addr = adddot(addr, sign 1)
+		}
+	}
+	return addr
+}
+
+func adddot(dot, n){
+	return dot + (n * 60*60*24)
+}
+
+func setdot(tm,    year,mon,day,l,r,narr,nowstr) {
+	l=length(tm)
+	"date " now | getline nowstr
+	close("date " now)
+	split(nowstr, narr, " ")
+	year=narr[6]
+	mon=smon[narr[2]]
+	day=narr[3]
+	if(l==0)
+		r=mktime(year,mon,day,0,0,0)
+	else if (l == 1 && tm == ".")
+		r=now
+	else if(l==1)
+		r=mktime(year,mon,tm,0,0,0)
+	else if(l==2)
+		r=mktime(year,mon,tm,0,0,0)
+	else if(l==4)
+		r=mktime(year,substr(tm,0,2), substr(tm,3,2),0,0,0)
+	else if(l==6)
+		r=mktime(substr(tm,0,2), substr(tm,3,2), substr(tm,5,2), 0,0,0)
+	else if(l==8)
+		r=mktime(substr(tm,0,4), substr(tm,5,2), substr(tm,7,2), 0,0,0)
+	else{
+		print "invalid time"
+		r=now
+	}
+	return r
+}
+
+func mktime(y, mon, d, h, min, s){
+	mcmd="mktime "y" "mon" "d
+	mcmd | getline s; close(mcmd)
+	return s
+}
+' $*

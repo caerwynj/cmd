@@ -1,0 +1,12 @@
+#!/home/xcs0998/bin/rc
+
+awk '
+BEGIN {print "1#"}
+$2 ~ /[0-9]+/ && $3 ~ /[0-9]+/{
+	tim= ($3+240)/60/60
+	printf("3%s#1#%d*%d##\n", $2, int(tim), int(tim*10)-(int(tim)*10)) | "sort -n"
+	tot+=tim
+}
+END {close("sort -n"); print "5#**9#"}
+' $*
+

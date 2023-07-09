@@ -1,0 +1,5 @@
+#!/home/xcs0998/bin/rc
+xrdb $h/.Xdefaults
+xset +fp /home/xcs0998/lib/Xg/bdf
+xsetroot -grey
+kill `{psu|grep dtwm|awk '{print $1}'}

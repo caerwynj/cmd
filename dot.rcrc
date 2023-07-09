@@ -1,0 +1,25 @@
+h=/home/xcs0998
+SHELL=$h/bin/rc
+PAGER=cat
+EDITOR=ed
+LANG=C
+MAIL=/var/mail/xcs0998
+MAILSERVER=ehposrv2
+TZ=US/Eastern
+MANPATH=/home/xcs0998/man:/usr/man:/pw/devl/svr4/ipex/man:/usr/openwin/man
+ORACLE_HOME=/pw/test/svr4/oracle_tools/7.3.4_tools
+ORA_NLS33=/pw/test/svr4/oracle_tools/7.3.4_tools/ocommon/nls/admin/datad2k
+TWO_TASK=OFLP002
+LD_LIBRARY_PATH=/usr/lib:/usr/openwin/lib:$ORACLE_HOME/lib
+IPEX_HOME=/pw/devl/svr4
+IPEX_DATA=/pw/data/devteam/ipex
+user=xcs0998
+cdpath=(. $h/n)
+path=($h/inferno/Solaris/sparc/bin $h/bin $h/cmd /bin /opt/gnu/bin)
+EMU='-c1 -g800x600 -r/home/xcs0998/inferno'
+TDB=$h/ped
+umask 022
+INCLUDES=$h/src/include
+fn se {TPUBS_ORA_VERSION=$1;. $h/ipex/ipex.rc}
+fn now {date -n}
+GS_LIB=/home/xcs0998/contrib/gs7.04/lib:/home/xcs0998/contrib/gs7.04/fonts

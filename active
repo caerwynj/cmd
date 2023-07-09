@@ -1,0 +1,5 @@
+#!/home/xcs0998/bin/rc
+
+s=`{mktime $*}
+#echo $s
+awk -v 'sec=' ^ $s '{print sec, $1 }' $h/db/index

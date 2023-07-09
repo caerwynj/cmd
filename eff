@@ -1,0 +1,17 @@
+#!/home/xcs0998/bin/rc
+# eff - set effective date for relation; default today
+
+if(~ $#* 1){
+	eff=$1
+	shift
+}else{
+	eff=`{date -n}
+}
+
+awk  -v 'now=' ^ $eff '
+BEGIN{
+	FS="\t"
+	OFS="\t"
+}
+{print now, $2, $3}
+' $*

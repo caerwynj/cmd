@@ -1,0 +1,17 @@
+awk '
+BEGIN{FS="\t"}
+{n[int($3+0.5)]++}
+END{
+	x=0
+	print 0,0
+	for(i in n){
+		if (n[i] >= x) {
+			x = n[i]
+			idx = i
+		}
+		print i+0.5, log(n[i] + 0.5)
+	}
+#	print idx
+}
+' | sort -n
+

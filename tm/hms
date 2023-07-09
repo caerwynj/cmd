@@ -1,0 +1,18 @@
+#!/home/xcs0998/bin/rc
+# hms: convert seconds to [days], hours, minutes, seconds
+fn hms {
+	secs=`{expr $1 % 60}
+	t=`{expr $1 / 60}
+	mins=`{expr $t % 60}
+	hrs=`{expr $t / 60}
+	echo $hrs $mins $secs
+}
+
+if (~ $#* 1) {
+	hms $1
+} else {
+	for (i in `{cat}) {
+		hms $i
+	}
+}
+

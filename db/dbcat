@@ -1,0 +1,12 @@
+#!/bin/sh
+equ="equery $RDB_SERV $RDB_CUST $RDB_USER $RDB_PASS"
+
+case $# in
+1) tbl=$1 ;;
+*) echo "Usage: dbcat TABLENAME" 1>&2; exit 1 ;;
+esac
+
+$equ <<%
+select *  from $tbl
+/
+%

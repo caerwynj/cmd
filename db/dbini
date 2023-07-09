@@ -1,0 +1,12 @@
+#!/bin/sh
+equ="equery $RDB_SERV $RDB_CUST $RDB_USER $RDB_PASS"
+
+case $# in
+2) tbl=$1 ;;
+*) echo "Usage: dbini TABLENAME csv-file" 1>&2; exit 1 ;;
+esac
+
+awk -F',' '
+NR==1 {hdr=$0}
+NR!=1 {print "insert into " table " (" hdr ") values (" $0 ");"}
+' "table=$tbl" $2 

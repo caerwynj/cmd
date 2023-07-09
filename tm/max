@@ -1,0 +1,5 @@
+awk '
+BEGIN{FS="\t"; max=-1}
+$3 > max {max = $3}
+END{print max}
+'

@@ -1,0 +1,6 @@
+#!/home/xcs0998/bin/rc
+
+#t = `{expr `{date -n} - 24 '*' 60 '*' 60}
+#du -a -t $* >[2] /dev/null | awk -v t'='$t '/sgml.Z/ && $1 > t {print $2}'
+
+find . -name '*.sgml.Z' -mtime -1 -print

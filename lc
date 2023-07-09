@@ -1,0 +1,3 @@
+#!/home/xcs0998/bin/rc
+
+ls $* | mc

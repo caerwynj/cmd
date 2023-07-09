@@ -1,0 +1,5 @@
+awk '
+BEGIN{FS=OFS="\t"}
+{t+=$3}
+END{print t/NR}
+'

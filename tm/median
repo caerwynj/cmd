@@ -1,0 +1,5 @@
+sort -t'	' -k 3n,3n |awk '
+BEGIN{FS="\t"}
+{n[NR]=$3}
+END{print n[int(NR/2)]}
+'

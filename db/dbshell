@@ -1,0 +1,262 @@
+#!/opt/arborperl/bin/perl -w
+
+use Getopt::Long;
+use File::Basename;
+use DBI;
+use strict;
+
+# Default values for options
+my ( $trace, $inst, $cache, $delim, $headers, $null_str ) =
+   ( 0, '', '', ",", 1, 'NULL' );
+
+sub usage {
+	my ( $sOpt, $sVal, @sMsg ) = @_;
+
+	my $sHelpText = <<END_HELP_END;
+Usage: $0 [options] name pass
+Options:
+   -h		   Write this help to STDOUT
+   -t trace	   trace control string
+   -b base	   database to use (default $inst)
+   -c cache	   SQL fetch cache size in rows
+Arguments:
+   name Oracle username
+   pass Password
+END_HELP_END
+
+	my $nRet = 'help' eq $sOpt ? 0 : 0 + $sVal;
+	my $fh	 = $nRet ? *STDERR : *STDOUT;
+	foreach ( @sMsg, $sHelpText ) { s/\s+$//; print $fh "$_\n"; }
+	exit $nRet;
+}
+
+# Get options and arguments
+Getopt::Long::config( qw( no_ignore_case no_auto_abbrev require_order ) );
+GetOptions(
+	'help|h'	=> \&usage,
+	'trace|t=i' => \$trace,
+	'base|b=s'	=> \$inst,
+	'cache|c=i' => \$cache,
+ ) or usage( 'die', 1 );
+
+usage( 'die', 1, 'Username and password are required' ) if 2 > @ARGV;
+my ( $user, $pass) = @ARGV;
+
+$\ = "\n";	# each record terminated with newline
+$, = $delim;	# set column delimiter
+
+DBI->trace( $trace );
+
+my $dbh;
+if ($ENV{DBMS} eq "oracle") {
+	if (! $inst) {
+		$inst = $ENV{TWO_TASK} || $ENV{ORACLE_SID} || '';
+	}
+	$dbh = DBI->connect( "dbi:Oracle:$inst", $user, $pass,
+		{ AutoCommit => 1, RaiseError => 0, PrintError => 1 } )
+		or die $DBI::errstr;
+	$dbh->do("alter session set NLS_DATE_FORMAT='Mon DD YYYY HH:MIAM'");
+} else {
+	if (! $inst) {
+		$inst = $ENV{DS_DATABASE} || '';
+	}
+	$dbh = DBI->connect( "dbi:Sybase:database=$inst", $user, $pass,
+		{ AutoCommit => 1, RaiseError => 0, PrintError => 1 } )
+		or die $DBI::errstr;
+}
+
+$dbh->{RowCacheSize} = $cache if $cache;
+$dbh->{ChopBlanks} = 1;
+
+my $line = "";
+while (defined($line = <STDIN>)) {
+	my @sts = ();
+	my $issp = 0;
+	my @sptables = ();
+	my $spname = "";
+
+	if ($line =~ /^\s*\@savepoint\s*(\w*)\s*(.*)$/) {
+		my $tbls = $2;
+		if ($tbls eq "all") {
+			$tbls = join ' ', $dbh->tables;
+		}
+		@sts = emit_savepoint($tbls);
+		$spname = $1;
+		@sptables = split ' ', $tbls;
+		$issp = 1;
+	} elsif ($line =~ /^\s*\@rollback\s*(.*)$/) {
+		@sts = emit_rollback($1);
+	} elsif ($line =~ /^\s*\@ini\s*(\w*)\s*(.*)$/) {
+		@sts = emit_ini($1, $2);
+	} elsif ($line =~ /^\s*\@del\s*(.*)$/) {
+		@sts = emit_del($1);
+	} elsif ($line =~ /^\s*\@cd\s*(.*)$/) {
+		chdir $1 or warn "Can't cd to $1: $!\n";
+	} elsif ($line =~ /^\s*!\s*(.*)$/) {
+		system($1);
+	} elsif ($line =~ /^\s*\@run\s*(.*)$/) {
+		open RUNCMD, $1 or warn "Can not open $1 $!\n";
+		@sts = <RUNCMD>;
+		close RUNCMD;
+	} elsif ($line =~ /^\s*\@dtr\s*(.*)$/) {
+		@sts = emit_dtr($1);
+	} elsif ($line =~ /^\s*\@etr\s*(.*)$/) {
+		@sts = emit_etr($1);
+	} elsif ($line =~ /^\s*#.*$|^\s*$/) {
+		# ignore comments, blank lines
+		next;
+	} else {
+		# read in straight sql terminated by '/'
+		push @sts, $line;
+		while (defined($line = <STDIN>)) {
+			push @sts, $line;
+			if ($line eq "/\n") {
+				last;
+			}
+		}
+	}
+
+	my $l = "";
+	my $stmt = "";
+	foreach $l (@sts) {
+		if ($l eq "/\n") {
+			exec_sql($stmt, $issp, $spname, shift(@sptables));
+			$stmt = "";
+		} else {
+			$stmt = join "\n", ($stmt, $l);
+		}
+	}
+
+}
+$dbh->disconnect;
+
+sub exec_sql {
+	my ($stmt, $issp, $spname, $table) = @_;
+	my $rc = 0;
+
+	my $sth = $dbh->prepare($stmt);
+
+	if ($sth->execute && $sth->{NUM_OF_FIELDS}) {
+		# the statement has output columns
+		my ( @col, $col );
+		my @name = @{$sth->{NAME_lc}};
+		my @types = @{$sth->{TYPE}};
+		if ($issp == 1) {
+			open DUMP, ">" . $table . ".$spname";
+			print DUMP map { s/\s+$//; $_ } @name; 
+		} else { 
+			print map { s/\s+$//; $_ } @name; 
+		}	
+		# Associate @col with output columns and fetch the rows
+		$sth->bind_columns( {}, \( @col[0 .. $#name] ));
+		while ($sth->fetch) {
+			for (my $i = 0; $i <= $#name; $i++) {
+				if (defined($col[$i])) {
+					$col[$i] = $dbh->quote($col[$i], $types[$i]);
+					# col might contain newlines, but we 
+					# can not allow that in CSV file; 
+					# for now we will just delete
+					$col[$i] =~ s/\n/ /gs
+				} else { 
+					$col[$i] = $null_str;
+				}
+			}
+			if ($issp) {
+				print DUMP @col;
+			} else {
+				print @col;
+			}
+		}
+		if ($issp) {
+			close DUMP;
+		}
+	}
+	$sth->finish;
+}
+
+sub emit_savepoint {
+	my @tables = split ' ', $_[0];
+	my @sql = ();
+
+	foreach my $t (@tables) {
+		push @sql, ("select * from $t\n");
+		push @sql, ("/\n");
+	}
+	return @sql;
+}
+
+sub emit_rollback {
+	my $sp = $_[0];
+	my @sql = ();
+	my @files = ();
+	
+	@files = glob("*.$sp");
+
+	foreach my $f (@files) {
+		my ($name, $path, $suffix) = fileparse($f, ("." . $sp));
+		push @sql, emit_del($name);
+		push @sql, emit_ini($name, $f);
+	}
+	return @sql;
+}
+
+sub emit_ini {
+	my ($table, $file) = @_;
+	my @sql = ();
+
+	push @sql, emit_dtr($table);
+	open INI, "<" . $file  or warn "Can't open $file $!\n";
+	my $header = <INI>;
+	chomp $header;
+	while (<INI>) {
+		push @sql, ("insert into $table ($header) values ($_)\n");
+		push @sql, ("/\n");
+	}
+	close INI;
+	push @sql, emit_etr($table);
+	return @sql
+}
+
+sub emit_del {
+	my @tables = split ' ', $_[0];
+	my @sql = ();
+
+	foreach my $t (@tables) {
+		push @sql, emit_dtr($t);
+		if ($ENV{DBMS} eq "oracle") {
+			push @sql, ("truncate table $t\n");
+		} else {
+			push @sql, ("delete from $t\n");
+		}
+		push @sql, ("/\n");
+		push @sql, emit_etr($t);
+	}
+	return @sql;
+}
+
+sub emit_dtr {
+	my @tables = split ' ', $_[0];
+	my @sql = ();
+
+	if ($ENV{DBMS} eq "oracle") {
+		foreach my $t (@tables) {
+			push @sql, ("alter table $t disable all triggers\n");
+			push @sql, ("/\n");
+		}
+	}
+	return @sql;
+}
+
+sub emit_etr {
+	my @tables = split ' ', $_[0];
+	my @sql = ();
+
+	if ($ENV{DBMS} eq "oracle") {
+		foreach my $t (@tables) {
+			push @sql, ("alter table $t enable all triggers\n");
+			push @sql, ("/\n");
+		}
+	}
+	return @sql;
+}
+

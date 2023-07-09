@@ -1,0 +1,8 @@
+scripts in these files depend on the following env vars
+RDB_DIR
+RDB_DBMS
+RDB_USER
+RDB_PASS
+RDB_CUST
+RDB_SERV
+DUMPSCHEMA

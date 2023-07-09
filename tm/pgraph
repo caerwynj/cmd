@@ -1,0 +1,2 @@
+#!/home/xcs0998/bin/rc
+tm/series 20010801,. 28 '|secs |grep -v /in/break |tock -p |9grep ''/in/se	|/in/ce	|/in/fe	|/in/admin	''' |awk '{print $3}' |awk 'BEGIN{FS="\n";RS=""}{print $1, $2, $3, $4}' |graph -a -o 4 -g 1 -y 0 1 0.1|plot

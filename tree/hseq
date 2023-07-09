@@ -1,0 +1,22 @@
+#!/home/xcs0998/bin/rc
+# create a hierarchical sequence out of a directory hierarchy
+
+fn hs {
+	for (i in *) {
+		if (test -f $i) {
+			echo $1','$i
+		}
+		if (test -d $i) {
+			echo $1','$i
+			cd $i
+			hs `{expr $1 + 1}
+			cd ..
+		}
+	}
+}
+
+
+echo '0,'`{pwd}
+hs 1
+
+

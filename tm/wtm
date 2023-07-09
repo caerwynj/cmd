@@ -1,0 +1,3 @@
+#!/home/xcs0998/bin/rc
+
+tm/series 20010801, 28 '|secs |grep -v /in/break |tock -p |9grep ''/in/se	|/in/ce	|/in/fe	|/in/admin	''' |secs -l

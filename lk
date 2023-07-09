@@ -1,0 +1,404 @@
+awk '
+BEGIN {
+	OFS="\t"
+	daten="date -n"
+	pwd="/"
+	smon["Jan"]="01";smon["Feb"]="02";smon["Mar"]="03"
+	smon["Apr"]="04";smon["May"]="05";smon["Jun"]="06"
+	smon["Jul"]="06";smon["Aug"]="08";smon["Sep"]="09"
+	smon["Oct"]="10";smon["Nov"]="11";smon["Dec"]="12"
+	for (i=1; ARGV[i] ~ /^-/; i++){
+		split(ARGV[i], f, "")
+		for(i in f)
+			flags[f[i]] = 1
+		ARGV[i]=""
+	}
+	if(!flags["t"] && !flags["m"])
+		flags["S"]=1
+	file=ARGV[i]; ARGV[i]=""; ARGC=1
+	i++
+	if(i >= ARGC)
+		ARGV[ARGC++] = "-"
+	system("mkinv 2 "file)
+}
+/^$/{next}
+/^!/{sub("!","", $0); system($0); next}
+/^\.$/ {imode=imode?0:1; print imode;next}
+$1 == "B" {
+	if($2 == ""){
+		print "no relation specified"
+	}else if(aRx($2, "Aval")){
+		relation=$2
+	}else
+		print $2 " invalid relation"
+	next
+}
+imode==1{
+	if (when){
+		now=when
+	}else{
+		daten | getline now
+	  	close(daten)
+	}
+}
+$1=="when"  {
+	if($2) 
+		when=cvttime($2)
+	else
+		when=now
+	next
+}
+$1=="continue" 	{when=0;next}
+$1=="mk"    		{mk($2, $3); next}
+$1=="type"  		{type($2, $3); next}
+$1=="rel"   		{rel($2, $3, $4); next}
+$1=="pwd"   		{print pwd; next}
+$1=="ls" 			{ls($2); next}
+$1=="cd" {
+	acat = aRx(relation, "Aval")
+	atyp = aRx(acat, "Category")
+	if(atyp=="pathname"){
+		t=clean($2)
+		if(t == "/" || aRb(t, "Object", acat))
+			pwd=t
+		else
+			print t " invalid name"
+	}else
+		print "not a pathname"
+	next
+}
+imode==1{
+	nf=split($0, fld, "\t")
+	if(nf==3){
+		now=fld[1]
+		a=fld[2]
+		b=fld[3]
+	}else{
+		a=fld[1]
+		b=fld[2]
+	}
+	bcat = aRx(relation, "Bval")
+	btyp = aRx(bcat, "Category")
+	if (btyp=="pathname")
+		b=clean(b)
+	acat = aRx(relation, "Aval")
+	atyp = aRx(acat, "Category")
+	if (atyp=="pathname")
+		a=clean(a)
+	if (xRb("Aval", bcat)){
+		if(!aRb(b, "Object", bcat)){
+			print "error:bval " b " must be declared " bcat,btyp
+			next
+		}
+	}
+	if(a != "/" && !aRb(a, "Object", acat)){
+		print "error:aval " a " must be declared"
+		next
+	}
+	system("techo "now" \""a"\" \""b"\" >>"relation);
+}
+imode==0{
+	nf=split($0, fld, "\t")
+	if(nf==1)
+		look(2, relation, ".2", $1)
+	else if(nf==3)
+		map($1, $2, $3)
+}
+
+func ls(s, 	t){
+	acat = aRx(relation, "Aval")
+	atyp = aRx(acat, "Category")
+	if(atyp=="pathname"){
+		if(s)
+			t=clean(s)
+		else
+			t=pwd
+		lk(t, "Object", acat)
+	}else
+		lk("", "Object", acat)
+}
+
+func mk(cat, n,		typ, dotdot){
+	if(n==""){
+		print "invalid name"
+		return
+	}
+	typ=aRx(cat, "Category")
+	if(typ=="pathname") {
+		n=clean(n)
+		dotdot=dirnm(n)
+	}
+	if(aRb(n, "Object", cat))
+		print n " already exists" 
+	else if(typ=="pathname" && dotdot != "/" && !aRb(dotdot, "Object", cat)){
+		print dotdot " does not exist" 
+	}else{
+		insert(now, n, cat, "Object")
+		insertbuf(n, "Object", cat)
+	}
+}
+
+func type(cat, typ){
+	if(typ !~ /int|pathname|string|null/)
+		print typ " invalid type" 
+	else if(aRb(cat, "Category", typ))
+		print cat " already exists" 
+	else{
+		insert(now, cat, typ, "Category")
+		insert(now, cat, "category", "Object")
+		insertbuf(cat, "Category", typ)
+	}
+}
+
+func rel(rname, aval, bval){
+	if(aRx(rname, "Aval")){
+		print n " already exists" 
+		return
+	}else if(!aRx(aval, "Category"))
+		print aval " invalid category"
+	else if (bval != "null" && !aRx(bval, "Category"))
+		print bval " invalid category"
+	else{
+		insert(now, rname, aval, "Aval")
+		insert(now, rname, bval, "Bval")
+		insert(now, rname, "relation", "Object")
+		insertbuf(rname, "Aval", aval)
+		insertbuf(rname, "Bval", bval)
+	}
+}
+
+func dirnm(n,   s,arr,i,j) {
+	j = split(n, arr, "/")
+	for (i=1; i<j; i++) {
+		s = s "/" arr[i]
+	}
+	if (j==0)
+		s="/"
+	gsub("//", "/", s)
+	return s
+}
+
+func clean(n,  s, str) {
+	s = "cleanname -d " pwd " " n
+	s | getline str
+	close(s)
+	return str
+}
+
+func aRb(a, R, b,    x,y,cmd,ret) {
+	ret=0
+	if((a,R,b) in aRbtab)
+		ret=1
+	else{
+		cmd="look -x  -t\"	\" " a " " R ".2"
+		while(cmd | getline x > 0){
+			split(x , y, " ")
+			if(y[4]==b){
+				aRbtab[y[3],R,y[4]]=now
+				ret=1
+			}
+		}
+		close(cmd)
+	}
+	return ret
+}
+
+func aRx(a, R){
+	ret=""
+	if((a,R) in btab)
+		ret = btab[a,R]
+	else{
+		cmd="look -x  -t\"	\" " a " " R ".2"
+		while(cmd | getline x > 0){
+			split(x , y, "	")
+			ret = btab[a,R]=y[3]
+		}
+		close(cmd)
+	}
+	return ret
+}
+
+func xRb(R, b){
+	ret=""
+	if((R,b) in atab)
+		ret = atab[R,b]
+	else{
+		cmd="look  -t\"	\" " a " " R ".3"
+		while(cmd | getline x > 0){
+			split(x , y, " ")
+			ret=atab[R,b]=y[2]
+#			print ret
+		}
+		close(cmd)
+	}
+	return ret
+}
+
+func lk(a, R, b){
+	cmd="look  -t\"	\" " a " " R ".2"
+	while(cmd | getline x > 0){
+		split(x, y, " ")
+		if(b && y[4] == b)
+			print x
+		else if(!b)
+			print x
+	}		
+	close(cmd)
+}
+
+func insertbuf(a, R, b){
+	aRbtab[a,R,b]=now
+	btab[a,R]=b
+	atab[R,b]=a
+}
+
+func cvttime(tm,    year,mon,day,l,r,narr,nowstr) {
+	l=length(tm)
+	"date " now | getline nowstr
+	close("date " now)
+	split(nowstr, narr, " ")
+	year=narr[6]
+	mon=smon[narr[2]]
+	day=narr[3]
+	if(l==0)
+		r=now
+	else if(l==1)
+		r=mktime(year,mon,tm,0,0,0)
+	else if(l==2)
+		r=mktime(year,mon,tm,0,0,0)
+	else if(l==4)
+		r=mktime(year,substr(tm,0,2), substr(tm,3,2),0,0,0)
+	else if(l==6)
+		r=mktime(substr(tm,0,2), substr(tm,3,2), substr(tm,5,2), 0,0,0)
+	else if(l==8)
+		r=mktime(substr(tm,0,4), substr(tm,5,2), substr(tm,7,2), 0,0,0)
+	else{
+		print "invalid time"
+		r=now
+	}
+	return r
+}
+
+func mktime(y, mon, d, h, min, s){
+	print y, mon, d
+	mcmd="mktime "y" "mon" "d
+	mcmd | getline s; close(mcmd)
+	return s
+}
+
+func insert(t, a, b, r){
+	system("techo "t" \""a"\" \""b"\" >>"r);
+}
+
+func look(inv, file, suffix, key,    x,pair){
+	toggle=0;
+	pair[0]=pair[1]=""
+	cmd="look " xflag " "nflag" "rflag " -t\"	\"  " key " " file suffix
+	while(cmd | getline x > 0){
+		pair[toggle]=x
+		if(pair[toggle] == pair[toggle?0:1]){
+			pair[toggle]=pair[toggle?0:1]=""
+		}else{
+			if(pair[toggle?0:1] != "")
+				tog(pair[toggle?0:1],inv)
+		}
+		toggle = toggle?0:1
+	}
+	if(pair[toggle?0:1] != "")
+		tog(pair[toggle?0:1],inv)
+	close(cmd)
+}
+
+func tog(s,inv,		t){
+	split(s, t, "\t")
+	if(inv==0)
+		print t[1], t[3], t[4]
+	else if(inv==1)
+		print t[1], t[2], t[3]
+	else if(inv==2)
+		print t[2], t[1], t[3]
+	else if(inv==3)
+		print t[2], t[3], t[1]
+	else if(inv==4)
+		print t[3], t[2], t[1]
+}
+
+func map(tm, aval, bval) {
+	ret=0
+	l = mapaRb(aval, relation)
+	if(flags["t"])
+		for(j=1;j<=l && r[j] <= tm;j++)
+			toga[t[j]] = toga[t[j]]?0:1
+	for(j=1;j<=l;j++){
+		if(flags["m"])
+			fmt(tm, aval, bval, r[j], aval, t[j])
+		else if(flags["t"] && toga[t[j]] && r[j] <= tm)
+			fmt(tm, aval, bval, r[j], aval, t[j])		
+		else if(flags["S"] && sjc(tm, r[j], r[j+1]))
+			fmt(tm, aval, bval, r[j], aval, t[j])
+	}
+	if(ret==0 && flags["o"])
+		fmt(tm,aval,bval,"",aval,"")
+	if(flags["t"])
+		for(i in toga)
+			delete toga[i]
+}
+
+func fn(n){
+	if(flags["d"])
+		return int(n/l)
+	else
+		return n
+}
+
+func fmt(t1,a,b,t2,c,d){
+	ret++
+	if(flags["r"]){
+		printf("%s%c%s%c%s%c", t1, OFS, a, OFS,  fn(d), (NF>3?OFS: "\n"))
+	}else if(flags["j"]){
+		printf("%s%c%s%c%s%c%s%c", t1, OFS, a, OFS,  d, OFS, b, (NF>3?OFS: "\n"))
+	}else{
+		printf("%s%c%s%c%s%c", t1, OFS, d, OFS,  fn(b), (NF>3?OFS: "\n"))
+	}
+	for(i=4; i<=NF; i++)
+		printf("%s%c", $i, (i==NF?"\n": OFS))
+}
+
+func sjc(current, p0, p1) {
+	if(p0 == "")
+		return 0
+	else if(p1 == "")
+		if(p0 <= current)
+			return 1
+		else
+			return 0
+	else if(p0 <= current && current < p1)
+		return 1
+	else if(p0 == current && current == p1)
+		return 1
+	else
+		return 0
+}
+
+func mapaRb(k, R, 		sep, l, cmd){
+	sep=""
+	if(!(k in date)){
+		cmd="look -t\"	\" -x " k " " R ".2"
+		while(cmd | getline x > 0){
+			split(x , y, "	")
+			date[k]=date[k] sep y[2]
+			targ[k]=targ[k] sep y[3]
+			sep="	"
+		}
+		close(cmd)
+	}
+	l=split(date[k], r, "	")
+	split(targ[k], t, "	")
+	return l
+}
+
+func range(s){
+
+}
+
+' $*

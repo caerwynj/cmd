@@ -1,0 +1,16 @@
+awk '
+BEGIN{FS="\t"}
+{n[int($3+0.5)]++}
+END{
+	x=0
+	for(i in n){
+		if (n[i] >= x) {
+			x = n[i]
+			idx = i
+		}
+		print i, n[i]
+	}
+#	print idx
+}
+'
+

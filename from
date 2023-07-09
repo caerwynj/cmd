@@ -1,0 +1,10 @@
+#!/home/xcs0998/bin/rc
+
+if (!~ $#* 2) {
+	echo 'Usage: from date user' >[1=2]; exit 1
+}
+for (i in `{grep '^From:' `{du -a . | awk '{print $2}'| grep $1}| grep -i $2 | awk -F: '{print $1}'}) {
+	
+	echo $i '  ' `{grep '^Subject:' $i|sed -e 's/^Subject: *//' -e 1q }
+}
+

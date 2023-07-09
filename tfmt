@@ -1,0 +1,3 @@
+#!/home/xcs0998/bin/rc
+
+awk '{printf("%-11d %-15s %-40s\n", $1, $2, $3)}' $*

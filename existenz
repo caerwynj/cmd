@@ -1,0 +1,22 @@
+#!/bin/sh
+# exist - given a list of table pairs (cust table and admin ref table)
+# find columns that have the same name and generate a sql
+# query that checks all values in customer column exist in admin column
+
+case $# in
+0) echo 'Usage: exist tablefile [schemafiles ...]' 1>&2; exit 2;;
+esac
+
+tfile=$1
+shift
+
+while read tbla tblb 
+do
+  commcol $tbla $tblb $* |\
+  while read col
+  do
+    echo "select  '$tbla $col $tblb', count(*) from $tbla "  
+    echo "where $col not in (select distinct $col from $tblb )"
+    echo "/"
+  done
+done < $tfile

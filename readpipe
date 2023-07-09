@@ -1,0 +1,7 @@
+#!/home/xcs0998/bin/rc
+
+awk '
+BEGIN{print "start" > ARGV[1]}
+/^exit/ {exit}
+{print}
+' $1

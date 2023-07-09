@@ -1,0 +1,15 @@
+awk '
+{rank[NR]=$1
+ val[NR] = $2
+ tot+=$1
+ vtot=val[NR]
+}
+END{
+avg = tot / NR
+for (i = 1; i <= NR; i++)
+	x += (rank[i] - avg) ^ 2
+var = x / (NR - 1)
+std = sqrt(var)
+for (i = 1; i <= NR; i++)
+	print (rank[i] - avg)/std , val[i]/vtot
+}

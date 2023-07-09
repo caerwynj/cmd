@@ -1,0 +1,9 @@
+#!/home/xcs0998/bin/rc
+
+if(!~ $#* 3){
+	echo 'usage: techo time aval bval' >[1=2]
+	exit 1
+}
+now=`{date -n}
+tab='	'
+echo $now ^ $tab ^ $1 ^ $tab ^ $2 ^ $tab ^ $3

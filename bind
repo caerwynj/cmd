@@ -1,0 +1,44 @@
+#!/home/xcs0998/bin/rc
+# bind - an alternative interface to ln -s
+
+# if source and target are directories replace target with source
+# if target does not exist create target
+
+bflag=0
+aflag=0
+for(i in $*){
+	switch($i){
+	case -b
+		bflag=1
+		shift
+	case -a
+		aflag=1
+		shift
+	}
+}
+if (!~ $#* 2) {
+	echo 'Usage: bind [-a|-b] src tgt' >[1=2]
+	exit 1
+}
+src=`{cleanname -d `pwd $1}
+tgt=`{cleanname -d `pwd $2}
+
+if(~ $bflag 1){
+	for(i in $src/*){
+		f=`{basename $i}
+		if(test -e $tgt/$f){
+			rm -f $tgt/$f
+		}
+		ln -s $i $tgt
+	}
+}else if(~ $aflag 1){
+	for(i in $src/*){
+		if(!test -e $tgt/^`{basename $i}){
+			ln -s $i $tgt
+		}
+	}
+}else{
+	if (test -L $tgt)
+		rm -f $tgt
+	ln -s $src $tgt
+}

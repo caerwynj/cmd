@@ -1,0 +1,8 @@
+#!/bin/sh
+
+case $# in
+1) tbl=$1 ;;
+*) echo 'Usage: gini TABLE' 1>&2 ; exit 1;;
+esac
+
+R $tbl | quot $tbl

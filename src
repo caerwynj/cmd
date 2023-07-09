@@ -1,0 +1,26 @@
+#!/home/xcs0998/bin/rc
+
+fn go{
+	type=`{file $1}
+	switch($type){
+	case script
+		B $1
+	case ELF
+		echo cant do this right now
+	}
+}
+
+for (i) {
+	if (test -f $i){
+		go $i
+	} else if (test -f $h/bin/$i){
+		go $h/bin/$i
+	} else if (test -f $h/cmd/$i){
+		go $h/cmd/$i
+	} else if (test -f $h/n/v6/scripts/$i){
+		go $h/n/v6/scripts/$i
+	} else if (test -f $h/n/v6/bin/$i){
+		go $h/n/v6/bin/$i
+	}
+}
+

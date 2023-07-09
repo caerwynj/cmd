@@ -1,0 +1,26 @@
+#!/home/xcs0998/bin/rc
+
+inv=0
+isuff=''
+
+if(~ $1 [1-4]){
+	inv=$1
+	isuff='.'$1
+	shift
+}
+
+for(i in $*){
+	last=`{du -t $i ^ $isuff $i >[2] /dev/null }
+	if(test $last(1) -lt $last(3)){
+		awk -v 'inv='$inv '
+		BEGIN{
+			FS="\t"
+			OFS="\t"
+		}
+		inv==1{print $2, $3, $4 | "sort -n"}
+		inv==2{print $3, $2, $4 | "sort -t\"	\" -k 1,1 -k 2n,2n"}
+		inv==3{print $4, $2, $3 | "sort -t\"	\" -k 1,1 -k 2n,2n"}
+		inv==4{print $4, $3, $2 | "sort -t\"	\" -k 1,2 -k 3n,3n"}
+		' $i > $i.$inv
+	}
+}

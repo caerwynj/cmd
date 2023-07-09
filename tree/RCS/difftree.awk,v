@@ -1,0 +1,107 @@
+head	1.2;
+access;
+symbols;
+locks
+	caerwyn:1.2; strict;
+comment	@# @;
+
+
+1.2
+date	2000.08.21.21.24.21;	author caerwyn;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2000.08.21.20.48.42;	author caerwyn;	state Exp;
+branches;
+next	;
+
+
+desc
+@diff two trees
+@
+
+
+1.2
+log
+@reads in multiple trees
+@
+text
+@BEGIN {	FS=","
+	nxt = 1
+	last = -1
+}
+
+{
+	node = nxt++ 
+	if ($1 == 0) {
+		# this is the root of a tree so do not set l
+		root[counttree++] = node
+	} else if ($1 > last) {
+		tree[node - 1, "r"] = node
+#		print node - 1, "r = ", node
+	} else if ($1 <= last) {
+#		print lst[$1], "l = ", node
+		tree[lst[$1], "l"] = node
+	}
+	tree[node, "val"] = $3
+	tree[node, "typ"] = $2
+	tree[node, "level"] = $1
+	last = $1
+	lst[$1] = node
+}
+
+END {
+	pretraverse(1, 0)
+	print lookup(tree[1, "r"], "is_default")
+}	
+
+
+
+
+function pretraverse(node, flag) {
+#	print "debug node: " node
+	if (! ((node,"val") in tree))
+		return
+	if (flag == 1 && tree[node, "level"] == 0)
+		return
+	print node, tree[node, "val"], tree[node, "typ"]
+	pretraverse(tree[node, "r"], 1)
+	pretraverse(tree[node, "l"], 1)
+}
+
+function lookup(node, val) {
+	print "debug :" tree[node,"val"] ":::"
+	if (! ((node, "val") in tree))
+		return 0
+	if (tree[node,"val"] == val)
+		return node
+	else 
+		return lookup(tree[node, "l"], val)
+}
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d6 6
+a11 2
+{	node = nxt++ 
+	if ($1 > last) {
+d20 1
+d24 1
+d26 1
+a26 1
+	pretraverse(1)
+d30 4
+a33 1
+function pretraverse(node) {
+d37 2
+d40 2
+a41 2
+	pretraverse(tree[node, "r"])
+	pretraverse(tree[node, "l"])
+@

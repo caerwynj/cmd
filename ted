@@ -1,0 +1,285 @@
+#!/home/xcs0998/bin/rc
+cd $TDB
+relation=/dev/tty
+if (~ $#*  1){
+	relation=$1
+	shift
+}
+
+awk -v 'relation='$relation '
+BEGIN {	daten="date -n"
+	pwd="/"
+	OFS="\t"
+	smon["Jan"]="01";smon["Feb"]="02";smon["Mar"]="03"
+	smon["Apr"]="04";smon["May"]="05";smon["Jun"]="06"
+	smon["Jul"]="06";smon["Aug"]="08";smon["Sep"]="09"
+	smon["Oct"]="10";smon["Nov"]="11";smon["Dec"]="12"
+}
+/^quit$/{exit}
+/^$/{next}
+/^!/{sub("!","", $0); system($0); next}
+$1 == "B" {
+	if($2 == ""){
+		print "no relation specified"
+	}else if(aRx($2, "Aval")){
+		relation=$2
+	}else
+		print $2 " invalid relation"
+	next
+}
+/^R$/{print relation; next}
+/^last$/{system("tail -1 " relation); next}
+{
+	if (when){
+		now=when
+	}else{
+		daten | getline now
+	  	close(daten)
+	}
+}
+$1=="when"  {
+	if($2) {
+		when=cvttime($2)
+		if($3)
+			when = when + (substr($3, 0, 2) * 60 * 60) + (substr($3, 3, 2) * 60)
+	} else
+		when=now
+	system("date " when)
+	next
+}
+$1=="continue" {when=0;next}
+$1=="mk"    {mk($2, $3); next}
+$1=="type"  {type($2, $3); next}
+$1=="rel"   {rel($2, $3, $4); next}
+$1=="pwd"   {print pwd; next}
+$1=="cd" {
+	acat = aRx(relation, "Aval")
+	atyp = aRx(acat, "Category")
+	if(atyp=="pathname"){
+		t=clean($2)
+		if(t == "/" || aRb(t, "Object", acat))
+			pwd=t
+		else
+			print t " invalid name"
+	}else
+		print "not a pathname"
+	next
+}
+
+$1=="ls" {
+	acat = aRx(relation, "Aval")
+	atyp = aRx(acat, "Category")
+	if(atyp=="pathname"){
+		if($2)
+			t=clean($2)
+		else
+			t=pwd
+		lk(t, "Object", acat)
+	}else
+		lk("", "Object", acat)
+	next
+}
+{
+	nf=split($0, fld, "\t")
+	if(nf==3){
+		now=fld[1]
+		a=fld[2]
+		b=fld[3]
+	}else{
+		a=fld[1]
+		b=fld[2]
+	}
+	bcat = aRx(relation, "Bval")
+	btyp = aRx(bcat, "Category")
+	if (btyp=="pathname")
+		b=clean(b)
+	acat = aRx(relation, "Aval")
+	atyp = aRx(acat, "Category")
+	if (atyp=="pathname")
+		a=clean(a)
+	if (xRb("Aval", bcat)){
+		if(!aRb(b, "Object", bcat)){
+			print "error:bval " b " must be declared " bcat,btyp
+			next
+		}
+	}
+	if(a != "/" && !aRb(a, "Object", acat)){
+		print "error:aval " a " must be declared"
+		next
+	}
+	system("techo "now" \""a"\" \""b"\" >>"relation);
+}
+
+func mk(cat, n){
+	if(n==""){
+		print "invalid name"
+		return
+	}
+	typ=aRx(cat, "Category")
+	if(typ=="pathname") {
+		n=clean(n)
+		dotdot=dirnm(n)
+	}
+	if(aRb(n, "Object", cat))
+		print n " already exists" 
+	else if(typ=="pathname" && dotdot != "/" && !aRb(dotdot, "Object", cat)){
+		print dotdot " does not exist" 
+	}else{
+		insert(now, n, cat, "Object")
+		insertbuf(n, "Object", cat)
+	}
+}
+
+func type(cat, typ){
+	if(typ !~ /int|pathname|string|null/)
+		print typ " invalid type" 
+	else if(aRb(cat, "Category", typ))
+		print cat " already exists" 
+	else{
+		insert(now, cat, typ, "Category")
+		insert(now, cat, "category", "Object")
+		insertbuf(cat, "Category", typ)
+	}
+}
+
+func rel(rname, aval, bval){
+	if(aRx(rname, "Aval")){
+		print n " already exists" 
+		return
+	}else if(!aRx(aval, "Category"))
+		print aval " invalid category"
+	else if (bval != "null" && !aRx(bval, "Category"))
+		print bval " invalid category"
+	else{
+		insert(now, rname, aval, "Aval")
+		insert(now, rname, bval, "Bval")
+		insert(now, rname, "relation", "Object")
+		insertbuf(rname, "Aval", aval)
+		insertbuf(rname, "Bval", bval)
+	}
+}
+
+func dirnm(n,   s,arr,i,j) {
+	j = split(n, arr, "/")
+	for (i=1; i<j; i++) {
+		s = s "/" arr[i]
+	}
+	if (j==0)
+		s="/"
+	gsub("//", "/", s)
+	return s
+}
+
+func clean(n,  s, str) {
+	s = "cleanname -d " pwd " " n
+	s | getline str
+	close(s)
+	return str
+}
+
+func aRb(a, R, b,    x,y,r,cmd) {
+	ret=0
+	if((a,R,b) in aRbtab)
+		ret=1
+	else{
+		cmd="iarx -x -i 2 " a " " R
+		while(cmd | getline x > 0){
+			split(x , y, " ")
+			if(y[3]==b){
+				aRbtab[y[2],R,y[3]]=now
+				ret=1
+			}
+		}
+		close(cmd)
+	}
+	return ret
+}
+
+func aRx(a, R){
+	ret=""
+	if((a,R) in btab)
+		ret = btab[a,R]
+	else{
+		cmd="iarx -x -i 2 " a " " R
+		while(cmd | getline x > 0){
+			split(x , y, " ")
+			ret = btab[a,R]=y[3]
+		}
+		close(cmd)
+	}
+	return ret
+}
+
+func xRb(R, b){
+	ret=""
+	if((R,b) in atab)
+		ret = atab[R,b]
+	else{
+		cmd="iarx -i 3 \"" b "\" " R
+		while(cmd | getline x > 0){
+			split(x , y, " ")
+			ret=atab[R,b]=y[2]
+#			print ret
+		}
+		close(cmd)
+	}
+	return ret
+}
+
+func lk(a, R, b){
+	cmd="iarx -i 2 \"" a "\" " R
+#	print cmd
+	while(cmd | getline x > 0){
+		split(x, y, " ")
+		if(b && y[3] == b)
+			print x
+		else if(!b)
+			print x
+	}		
+	close(cmd)
+}
+
+func insertbuf(a, R, b){
+	aRbtab[a,R,b]=now
+	btab[a,R]=b
+	atab[R,b]=a
+}
+
+func cvttime(tm,    year,mon,day,l,r,narr,nowstr) {
+	l=length(tm)
+	"date " now | getline nowstr
+	close("date " now)
+	split(nowstr, narr, " ")
+	year=narr[6]
+	mon=smon[narr[2]]
+	day=narr[3]
+	if(l==0)
+		r=now
+	else if(l==1)
+		r=mktime(year,mon,tm,0,0,0)
+	else if(l==2)
+		r=mktime(year,mon,tm,0,0,0)
+	else if(l==4)
+		r=mktime(year,substr(tm,0,2), substr(tm,3,2),0,0,0)
+	else if(l==6)
+		r=mktime(substr(tm,0,2), substr(tm,3,2), substr(tm,5,2), 0,0,0)
+	else if(l==8)
+		r=mktime(substr(tm,0,4), substr(tm,5,2), substr(tm,7,2), 0,0,0)
+	else{
+		print "invalid time"
+		r=now
+	}
+	return r
+}
+
+func mktime(y, mon, d, h, min, s){
+	mcmd="mktime "y" "mon" "d
+	mcmd | getline s; close(mcmd)
+	return s
+}
+
+func insert(t, a, b, r){
+	system("techo "t" \""a"\" \""b"\" >>"r);
+}
+
+' $*

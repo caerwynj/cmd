@@ -1,0 +1,14 @@
+#!/bin/sh
+
+case $# in
+1) ;;
+*) echo 'Usage: seq maxn' 1>&2; exit 1;;
+esac
+
+i=0
+
+while [ $i -lt $1 ]
+do
+	i=`expr $i + 1`
+	echo $i
+done

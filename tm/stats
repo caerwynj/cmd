@@ -1,0 +1,37 @@
+#!/home/xcs0998/bin/rc
+cd $TDB
+tri -0 , tick |secs |tock -p |9grep '/in/se	|/in/ce	|/in/fe	|/in/admin	'
+for (i in /in/se/ /in/ce/ /in/fe/ /in/admin/) {
+echo
+echo $i
+	tri -0 , stat | grep $i |tm/queue |tm/wt
+	tri -2 $i Object |eff |ni -r tot |sort -t'	' -k 3n,3n |awk '
+	BEGIN{
+		FS=OFS="\t"
+		min=1000
+		max=-1
+	}
+	{val=int($3 + 0.5)}
+	{n[val]++}
+	{med[NR]=val}
+	val < min && val > 0{min = val}
+	val > max {max = val}
+	{t+=val}
+	END{
+		x=0
+		for(i in n){
+			if (n[i] >= x ) {
+				x = n[i]
+				idx = i
+			}
+	#		print i, n[i]
+		}
+		print "avg ", t/NR
+		print "min ", min
+		print "max ", max
+		print "median ", med[int(NR/2)]
+		print "mode ", idx
+	}
+	'
+}
+

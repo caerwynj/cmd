@@ -1,0 +1,18 @@
+#!/bin/sh
+# Q -- Query; pass cmd arg (subs field names with positional) call awk script
+
+case $# in
+1) q=$1; shift;; 
+*) echo "usage ..."; exit 1 ;;
+esac
+
+ln=`line`
+echo "$ln"
+qawk=`echo "$ln" | awk  -F',' '
+{ 	for (i=1; i<=NF; i++)  
+		attr[$i] = i
+	for (j in attr) 
+		gsub( j, "$" attr[j], query)
+	print query 
+}' query="$q" `
+awk -F',' "$qawk" $*

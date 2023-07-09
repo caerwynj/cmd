@@ -1,0 +1,11 @@
+#!/home/xcs0998/bin/rc
+
+switch($#*){
+case 1
+	re= `{cleanname -d `tm/pwp $1}
+case *
+	re=`tm/pwp
+}
+
+cd /home/xcs0998/ped
+iarx -i 2 $re stat |eff | latest |grep -v dead |map -r desc |eff

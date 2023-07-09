@@ -1,0 +1,16 @@
+#!/bin/sh
+# rand - create a list of pseudo-random numbers given the max, and sample size
+
+case $# in
+2) ;;
+*) echo 'Usage: rand max size' 1>&2; exit 2;;
+esac
+
+awk -v max=$1 -v size=$2 '
+BEGIN {
+  srand()
+  for (i = 0; i < size; i++) {
+    print int(max * rand()) + 1
+  }
+} ' < /dev/null
+

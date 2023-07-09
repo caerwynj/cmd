@@ -1,0 +1,23 @@
+#!/home/xcs0998/bin/rc
+# trice - transaction slice
+
+cd $TDB
+if (~ $1 [0-9,]*){
+	r=$1
+	shift
+}
+secs=`{range $r}
+if (!~ $#* 0) {
+	files=$*
+} else {
+	files=(tick)
+}
+
+for(i in $files){
+	look -n -r $secs(2) $secs(1) $TDB/dbver | grep $i |awk '
+{
+	rev=$3
+	before=$3-0.1
+	system("rcsdiff -n -q -r"before" -r"rev" "$2)
+}' | grep '^[0-9]'
+}

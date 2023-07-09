@@ -1,0 +1,12 @@
+#!/home/xcs0998/bin/rc
+
+#-v 'dflag=-n' '
+awk '
+NR==1 {pair[0]=$2; toggle = 1}
+{print}
+NR!=1{
+	pair[toggle]=$2
+	system("diff " dflag " " pair[toggle ? 0 : 1] " " pair[toggle])
+	toggle = toggle ? 0 : 1
+}
+' $*

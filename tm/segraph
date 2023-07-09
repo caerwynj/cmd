@@ -1,0 +1,3 @@
+#!/home/xcs0998/bin/rc
+cd $TDB
+iarx -2 /in/se stat |sort -n |tm/queue |awk '{print $2}' |graph  -a -g 1 -y 0 100 10|plot

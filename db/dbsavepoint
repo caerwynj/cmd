@@ -1,0 +1,16 @@
+#!/bin/sh
+# savepoint - dump list of tables using unique name given, for
+# use in later rollback
+
+case $# in
+0|1) echo 'Usage: dbsavepoint name TBLs ...' 1>&2; exit 1;;
+*) ;;
+esac
+
+name=$1; shift;
+
+for i
+do
+	$h/cmd/db/R $i | awk -f $h/cmd/db/quote.awk > $i.$name
+done
+

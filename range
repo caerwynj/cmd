@@ -1,0 +1,71 @@
+#!/home/xcs0998/bin/rc
+smon='s/Jan/01/
+	s/Feb/02/
+	s/Mar/03/
+	s/Apr/04/
+	s/May/05/
+	s/Jun/06/
+	s/Jul/07/
+	s/Aug/08/
+	s/Sep/09/
+	s/Oct/10/
+	s/Nov/11/
+	s/Dec/12/'
+
+fn usage {
+	echo 'usage: range  [[[yy]yy]mm]dd, [[[[yy]yy]mm]dd]' >[1=2]
+	exit 1
+}
+
+year=`{date|9sed 's/.* //'}
+mon=`{date|9sed -e 's/^....(...).*/\1 /' -e $smon}
+day=`{date|9sed -e 's/^........(..).*/\1/' -e 's/ /0/'}
+#echo $year $mon $day
+switch($1){
+case [0-9]*,[0-9]*
+	d = `` (,) {echo -n $1}
+	shift
+case [0-9]*,
+	d = `` (,) {echo -n $1}
+	d = ($d 20300101)
+	shift
+case ,[0-9]*
+	d = `` (,) {echo -n $1}
+	d = (20010701 $d(1))
+	shift
+case [0-9]*
+	d = ($1)
+	shift
+case ,
+	d=(19700101 20300101)
+	shift
+case *
+	d = $year ^ $mon ^ $day
+}
+
+for(i in 1 2){
+	if (!~ $d($i) ''){
+	switch($d($i)){
+	case ?
+		mon=`{date|9sed -e 's/^....(...).*/\1 /' -e $smon}
+		last=($year $mon `{echo $d($i)|9sed 's/^/0/'})
+	case ??
+		mon=`{date|9sed -e 's/^....(...).*/\1 /' -e $smon}
+		last=($year $mon $d($i))
+	case ????
+		last=($year `{echo $d($i)|9sed 's/^(..)(..)/\1 \2/'})
+	case ??????
+		last=(`{echo $d($i)|9sed 's/^(..)(..)(..)/20\1 \2 \3/'})
+	case ????????
+		last=(`{echo $d($i)|9sed 's/^(....)(..)(..)/\1 \2 \3/'})
+	case *
+		break
+	}
+#	echo $last(1 2 3)
+	secs = ($secs `{mktime $last(1 2 3)})
+	}
+}
+
+if (~ $#secs 1)
+	secs = ($secs `{expr $secs + 86400})
+echo $secs(1) $secs(2)

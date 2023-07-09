@@ -1,0 +1,60 @@
+#!/bin/sh
+# dumpt - dump the trigger or proc sql from a shell script
+sybase=1
+case $1 in
+-s) sybase=1; shift ;;
+-o) sybase=0; shift ;;
+*)  sybase=1 ;; 
+esac
+
+if [ $sybase -eq 1 ]
+then
+case $1 in
+-t) obj=trigger ;;
+-p) obj=procedure ;;
+*)  echo "Usage: $0 [-s|-o] -t|-p file ..." 1>&2; exit 1;;
+esac
+shift
+awk '
+BEGIN { trigger = 0 }
+/^go/ && trigger ~ /[02]/ {
+    endp = 0
+    trigger = 2
+    next
+}
+trigger == 2 {
+    que[++endp] = $0 }
+/create[ \t]*'$obj'/  {
+    file = $3
+    for (i = 1; i < endp; i++)
+	print que[i] > file
+    trigger = 1 }
+/^go/ && trigger == 1 { 
+    trigger = 0
+    close(file)
+}
+trigger == 1 {
+    print > file }' $*
+
+else
+case $1 in
+-t) obj=TRIGGER ;; 
+-p) obj=PROCEDURE ;;
+*)  echo "Usage: $0 -s|-o -t|-p file ..." 1>&2; exit 1;;
+esac
+shift
+awk '
+BEGIN { trigger = 0 }
+/CREATE OR REPLACE[ \t]*'$obj'/  {
+    file = $5
+    gsub(/\(/, "", file)
+    trigger = 1 }
+/^\/$/ && trigger == 1 { 
+    trigger = 0
+    close(file)
+}
+trigger == 1 {
+    print > file }' $*
+
+fi
+

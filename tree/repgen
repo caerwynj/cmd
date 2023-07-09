@@ -1,0 +1,85 @@
+#!/bin/sh
+# generate report
+
+echo 'No. new tables'
+tot=0
+for file in "$@"
+do
+    i=`grep '^0.*3$' $file | wc -l`
+    tot=`expr $i + $tot`
+    echo $file $i
+done
+echo Total $tot
+tot=0
+echo 'No. removed tables'
+for file in "$@"
+do
+    i=`grep '^0.*1$' $file | wc -l`
+    tot=`expr $i + $tot`
+    echo $file $i
+done
+echo Total $tot
+tot=0
+echo 'No. total tables in new database'
+for file in "$@"
+do
+    i=`grep '^0.*[23]$' $file | wc -l`
+    tot=`expr $i + $tot`
+    echo $file $i
+done
+echo Total $tot
+tot=0
+echo 'No. of tables to convert'
+for file in "$@"
+do
+    i=`treeq '^[1-9][0-9]?,0,.*,2$|^[1-9][0-9]?,1,.*$|,2,.*,[13]$' $file | grep '^0' | wc -l`
+    tot=`expr $i + $tot`
+    echo $file $i
+done
+echo Total $tot
+tot=0
+echo 'No. of existing tables with new columns not null and no default'
+for file in "$@"
+do
+    i=`treeq '^[1-9][0-9]?,0,.*,2$|^2,1,.*,3$|,2,nul,N,3$|,2,def,,3$' $file | grep '^0' | wc -l`
+    tot=`expr $i + $tot`
+    echo $file $i
+done
+echo Total $tot
+tot=0
+echo 'No. of new columns in existing tables, which are new, not null and no default'
+for file
+do
+    i=`pathq '^[1-9][0-9]?,0,.*,2$|^2,1,.*,3$|,2,nul,N,3$|,2,def,,3$' $file | grep '^1' | wc -l`
+    tot=`expr $i + $tot`
+    echo $file $i
+done
+echo Total $tot
+tot=0
+echo 'No. existing tables with removed columns'
+for file in "$@"
+do
+    i=`treeq '^[1-9][0-9]?,0,.*,2$|^0,1,.*,1$' $file | grep '^0' | wc -l`
+    tot=`expr $i + $tot`
+    echo $file $i
+done
+echo Total $tot
+tot=0
+echo 'No. of removed columns from existing tables'
+for file
+do
+    i=`pathq '^[1-9][0-9]?,0,.*,2$|^0,1,.*,1$' $file | grep '^1' | wc -l`
+    tot=`expr $i + $tot`
+    echo $file $i
+done
+echo Total $tot
+tot=0
+echo 'No. tables to auto-convert'
+for file in "$@"
+do
+    i=`tblconv $file | notnnn | notcolrm | grep '^0' | wc -l`
+    tot=`expr $i + $tot`
+    echo $file $i
+done
+echo Total $tot
+tot=0

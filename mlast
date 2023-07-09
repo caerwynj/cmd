@@ -1,0 +1,5 @@
+#!/bin/sh
+# last.sh: runs more on the latest program created in a directory
+# should be run along the lines of 'last.sh ~arbor/data/log/feb*'
+# this will run more on the last logfile created
+more `ls -t1 $* | head -1`

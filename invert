@@ -1,0 +1,25 @@
+#!/home/xcs0998/bin/rc
+
+awk '
+BEGIN{
+	FS="\t"
+	OFS="\t"
+	for (i=1; ARGV[i] ~ /^-/; i++){
+		split(ARGV[i], f, "")
+		for(i in f)
+			flags[f[i]] = 1
+		ARGV[i]=""
+	}
+	if(i >= ARGC)
+		ARGV[ARGC++] = "-"
+}
+{
+	if(flags["a"])
+		printf("%s%c%s%c%s%c", $3, OFS, $2, OFS,  $1, (NF>3?OFS: "\n"))
+	else if(flags["b"])
+		printf("%s%c%s%c%s%c", $2, OFS, $1, OFS,  $3, (NF>3?OFS: "\n"))
+	else
+		printf("%s%c%s%c%s%c", $1, OFS, $3, OFS,  $2, (NF>3?OFS: "\n"))
+	for(i=4; i<=NF; i++)
+		printf("%s%c", $i, (i==NF?"\n": OFS))
+}' $*

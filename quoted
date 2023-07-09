@@ -1,0 +1,24 @@
+#!/bin/sh
+# quoted.awk read a schema file and extract the quoted field
+# A quoted field is enclosed in double-quote chars "..."
+# A quted field may conatin commas but not newlines
+# A quoted field may contain double-quote characters", represented by "".
+# A quoted field may be empty
+awk '
+BEGIN {
+    FS = "," }
+
+$1 == 0 {
+    close(file)
+    file = $3
+}
+$1 == 1 {  # this line contains a quoted field
+    line = $0
+    if (match(line, /".*"/)) {
+	 line = substr(line, RSTART + 1, RLENGTH - 2) # removed quotes
+	 gsub(/""/, "\"", line)
+	 gsub("\f", "\n", line)
+	printf("%s", line) > file
+    }
+} ' $*
+

@@ -1,0 +1,8 @@
+#!/bin/sh
+# cuaddep - cust admin dependencies (not a very imaginative name)
+# given a list of admin tables (one tablename per line) find
+# all references to tables in the customer triggers 
+# and be nice about the output
+
+redep $* | sed 's/\.trig//' | sort | uniq | awk '$1 != $2'
+

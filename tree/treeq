@@ -1,0 +1,46 @@
+#!/bin/sh
+# hq.awk: hierarchy query
+# prints the entire tree for a mtching query
+
+argmatch=$1
+shift
+
+awk '
+BEGIN {FS=","
+  OFS=","
+}
+
+{   line[++stackp] = $0 
+    deg[$1]++
+#print "d ", $1,  deg[$1]
+    # pop the values for each attribute on the stack and add them
+    # then do the match, push the result back on the stack
+    tot = 0
+    nd = top - deg[$1 + 1]
+    for (; top > nd; top--) {
+	deg[$1 + 1]--
+	tot += stk[top]
+    }
+#print "t " tot
+    if (tot "," $0 ~ /'$argmatch'/) 
+	stk[++top] = 1
+    else
+	stk[++top] = 0
+#print "s " stk[top] 
+}
+
+$1 == 0 {    # table function
+    if (stk[top--] == 1)
+	frontp = stackp
+    else
+        stackp = frontp
+}
+
+END { pstack() }
+
+func pstack(   i) {
+    for (i = 1; i <= stackp; i++ ) {
+        print line[i]
+	line[i] = ""
+   }
+}' $*

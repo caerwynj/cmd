@@ -1,0 +1,7 @@
+#!/bin/sh
+for i in $*
+do
+	lex ${i}.l
+	cc lex.yy.c -ll -o $i
+	rm -f lex.yy.c
+done

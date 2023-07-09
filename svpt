@@ -1,0 +1,26 @@
+#!/bin/sh
+# savepoint - dump list of tables using unique name given, for
+# use in later rollback
+
+case $# in
+0|1) echo 'Usage: svpt name TBLs ...' 1>&2; exit 1;;
+*) ;;
+esac
+
+name=$1; shift;
+
+for i
+do
+( fsql -t'~' xcs0998 changeme<<% | awk -F'~' '
+{col[NR]=$1;typ[NR]=$2; len[NR]=$3} 
+END{for (i=1;i<=NR;i++) printf("%s%s", tolower(col[i]), i<NR?"~":"\n")
+    for (i=1;i<=NR;i++) printf("%s(%s)%s", typ[i], len[i],i<NR?"~":"\n")
+}' 
+select column_name, data_type, data_length
+from all_tab_columns
+where table_name = UPPER('$i')
+order by column_id;
+%
+echo "select * from $i;" | fsql -t'~' xcs0998 changeme 
+) | awk -f $h/cmd/db/quote.awk >> $i.$name
+done

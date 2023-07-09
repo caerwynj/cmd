@@ -1,0 +1,9 @@
+#!/bin/sh
+equ="equery $RDB_SERV $RDB_CUST $RDB_USER $RDB_PASS"
+
+case $# in
+0) echo "Usage: quot TABLENAME csv-file" 1>&2; exit 1 ;;
+*) tbl=$1 ; shift;;
+esac
+
+awk -f $RDB_DIR/quote.awk -v table=$tbl $* 

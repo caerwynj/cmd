@@ -1,0 +1,6 @@
+#!/bin/sh
+
+awk 'BEGIN {FS=","}
+NR == 1 {for (i=1; i<NF; i++) head[i] = $i}
+NR != 1 {for (i=1; i<NF; i++) print $i "\t" head[i]
+print ""}' $*

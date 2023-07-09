@@ -1,0 +1,52 @@
+#! /bin/csh
+#
+# filevers - filter to create a file with versioning.
+#
+# Usage:  filevers filename [num]
+#
+# where
+#   filename -  the name of the file to create
+#   num      -  the number of old versions to keep (default = 3)
+#
+# This utility keeps older versions of a file in a manner similar
+# to the VMS file system
+#
+# Example:
+#    executing: filevers myfile 2
+#    1. write output to myfile.0
+#    2. mv myfile.1 myfile.2
+#    3. mv myfile myfile.1
+#    4. mv myfile.0 myfile.1
+#
+if( $#argv == 0 || $#argv > 2 ) then
+  echo "Usage: $0 filename [num]"
+  exit
+endif
+
+set filename=$1
+if( $2 =~ [0-9] ) then
+  set num=$2
+else
+  set num=3
+endif
+
+cat >! ${filename}.0
+
+@ num_out = $num + 0
+@ num_in  = $num - 1
+
+while( $num_in > 0 )
+  if( -e ${filename}.$num_in ) then
+    mv ${filename}.$num_in ${filename}.$num_out
+  endif
+  @ num_out = $num_out - 1
+  @ num_in  = $num_in - 1
+end
+
+if( -e $filename ) then
+  mv ${filename} ${filename}.1
+endif
+
+mv ${filename}.0 $filename
+
+# the end

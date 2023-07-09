@@ -1,0 +1,3 @@
+#!/bin/sh
+
+ci -l -q  -m'xxx' -t-'xxx' "$@"

@@ -1,0 +1,20 @@
+#!/home/xcs0998/bin/rc
+
+cd $TDB
+iarx -i 2 /in/ce stat |latest |grep -v dead |eff |map -ro comment |map -jo desc |map -jo szest |map -jo owner |map -jo pri |map -jo Progress |sort -t'	' -k 4n,4n |awk '
+BEGIN {
+	FS="\t"
+	"date" | getline now
+	print "<html>\n<head>\n<title>Ipex Task List</title>\n</head>\n<body>"
+	print "<h3>IPEX Task List </h3>"
+	print "Last updated: " now 
+	print "<a href=cbj1.html>IPEX completes</a>"
+	print "<table border=1><tr><th>Task<th>State<th>Priority<th>Owner<th>Size<th>Headline<th>Comments"
+}
+{	print "<tr>"
+	for (i=2; i<=NF; i++)
+		print "<td>", $i
+	print "</tr>"
+}
+END {print "</table>\n</body>\n</html>"}
+' > /pw/data/tphtml/military_pubs/cbj.html 

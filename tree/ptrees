@@ -1,0 +1,29 @@
+#!/bin/sh
+# prints out a tree for matching input value
+# ie prints out a table and all columns and attributes for given table name
+
+case $# in
+0) echo 'usage: ptrees treename-file [schema-file ...]' 2>&1; exit 1;;
+esac
+
+flist=$1
+shift
+
+awk -v "file=$flist" '
+BEGIN {
+	FS = "," 
+	print file
+	while (getline <file > 0) {
+		print "debug: file " $0
+		f[i++] = $0
+	}
+}
+
+$1 == 0 { # top of tree
+	ok = 0
+	for (i in f)	
+		if ($3 == f[i])
+			ok = 1
+}
+ok == 1	{ print }' $*
+

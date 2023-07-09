@@ -1,0 +1,3 @@
+#!/bin/sh
+# existing tables that don't have columns removed
+treeq '0,0,.*,2$|^0,1,.*,1$' $* 

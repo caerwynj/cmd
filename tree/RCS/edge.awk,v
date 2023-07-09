@@ -1,0 +1,32 @@
+head	1.1;
+access;
+symbols;
+locks
+	caerwyn:1.1; strict;
+comment	@# @;
+
+
+1.1
+date	2000.08.22.16.31.58;	author caerwyn;	state Exp;
+branches;
+next	;
+
+
+desc
+@convert hseq into edge pairs
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@BEGIN {FS=","}
+/^0/ { tbl=$2 "," $3}
+/^1/ {
+	col = $2 "," $3
+	print tbl, col
+}
+/^2/ {print col, $2 "," $3}
+@

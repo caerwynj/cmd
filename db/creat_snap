@@ -1,0 +1,12 @@
+#!/bin/sh
+# create snapshot of tables in file
+
+case $# in
+1) file=$1;;
+*) echo 'Usage: creat_snap filename' 1>&2; exit 1;;
+esac
+
+for i in `cat $file`
+do
+	gini $i > $i
+done

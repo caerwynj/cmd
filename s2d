@@ -1,0 +1,5 @@
+#!/home/xcs0998/bin/rc
+# seconds to decimal
+
+awk 'BEGIN{FS="\t"; OFS="\t"}
+{printf("%s	%s	%.1f\n", $1,$2,$3/60/60)}' $*

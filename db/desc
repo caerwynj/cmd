@@ -1,0 +1,19 @@
+#!/home/xcs0998/bin/rc
+
+if (~ $#* 1) {
+	tbl=$1
+} else {
+	echo Usage: desc TABLENAME >[1=2]; exit
+}
+
+sql <<% | awk -F',' '{col[NR]=$1;typ[NR]=$2; len[NR]=$3} 
+END{for (i=1;i<=NR;i++) printf("%s%s", tolower(col[i]), i<NR?",":"\n")
+    for (i=1;i<=NR;i++) printf("%s(%s)%s", typ[i], len[i],i<NR?",":"\n")
+}'
+select column_name, data_type, data_length
+from all_tab_columns
+where table_name = UPPER('$tbl')
+order by column_id
+/
+%
+

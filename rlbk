@@ -1,0 +1,16 @@
+#!/bin/sh
+# rollback - restore tables after a previous savepoint
+
+case $# in 
+1) name=$1;;
+*) echo 'Usage: rlbk name' 1>&2; exit 1;;
+esac
+
+for i in *.${name}
+do
+	tbl=`basename $i .$name`
+	awk -F',' '
+NR==1 {print "delete from " table ";"; hdr=$0}
+NR!=1 {print "insert into " table " (" hdr ") values (" $0 ");"}
+' "table=$tbl" $i | fsql xcs0998 changeme
+done

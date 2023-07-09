@@ -1,0 +1,24 @@
+#!/bin/sh
+# commcol - print columns that are common--have the same name--in 
+# the two tables
+
+acol=/var/tmp/commcol.a.$$
+bcol=/var/tmp/commcol.b.$$
+schema=/var/tmp/commcol.c.$$
+
+trap 'rm -f $acol $bcol $schema; exit 1' 1 2 15
+
+case $# in 
+0|1) echo 'Usage: commcol table1 table2 <schemafiles ...>' 1>&2; exit 2 ;;
+esac
+
+table1=$1; shift
+table2=$1; shift
+
+cat $* > $schema
+
+ptree $table1 $schema | awk -F',' '/1,col/ {print $3}' | sort | uniq > $acol
+ptree $table2 $schema | awk -F',' '/1,col/ {print $3}' | sort | uniq > $bcol
+comm -12 $acol $bcol
+
+rm -f $acol $bcol $schema

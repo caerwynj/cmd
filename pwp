@@ -1,0 +1,4 @@
+#!/home/xcs0998/bin/rc
+# pwp - print working project
+
+tail -1 $h/ped/tick | awk '{print $3}'

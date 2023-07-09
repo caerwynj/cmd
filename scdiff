@@ -1,0 +1,14 @@
+#!/home/xcs0998/bin/rc
+
+#-v 'dflag=-n' '
+9sed 's@/pw/devl@/pw/data/devteam/SrcCntrl/devl@' $* |awk '
+NR==1 {pair[0]=$2; ver[0]=$3; toggle = 1}
+{print}
+NR!=1{
+	pair[toggle]=$2
+	ver[toggle]=$3
+	cmd = "''diff <{sccs get -r "ver[toggle?0:1]" -p "pair[toggle?0:1]"} <{sccs get -r "ver[toggle]" -p "pair[toggle]"}''"
+	system("rc -c " cmd)
+	toggle = toggle ? 0 : 1
+}
+' 

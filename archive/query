@@ -1,0 +1,62 @@
+#!/bin/sh
+# query - shell wrapper around isql and sqlplus that creates uniform
+# interface and output. 
+# use '/' on separate line as command terminator.
+# No headers are output, cols separated by single space.
+
+file=/var/tmp/query.$$
+trap 'rm -f /var/tmp/$file; exit 1' 1 2 15
+
+isSybase=1
+
+case "$1" in
+  -s*) isSybase=1; shift ;;
+  -o*) isSybase=0; shift ;;
+  -*) echo 'query: Unknown arg ' 1>&2; exit 2;;
+esac
+
+case $# in
+1|2|3) echo 'Usage: query [-s|-o] server DB user passwd' 1>&2; exit 2 ;;
+*) DSQUERY=$1; shift; dbname=$1; shift; user=$1; shift; passwd=$1 ; shift ;;
+esac
+
+if [ $isSybase -eq 1 ]
+then
+  echo use $dbname "\n/" > $file
+else
+  cat <<EOF >$file
+set COLSEP ' '
+set LINESIZE 10000
+set ECHO OFF
+set FEEDBACK OFF
+set HEADING OFF
+set NULL 'NULL'
+EOF
+fi
+
+cat $* >> $file 
+
+echo "exit">>$file
+
+if [ $isSybase -eq 1 ]
+then
+  isql -U$user -P$passwd -S$DSQUERY -c'/' -s ',' -w10000< $file | sed '
+1,/---/d
+/^$/,/---/d
+/----/d
+/^$/d
+s/[ 	][ 	]*/ /g
+s/^[ 	]*//
+s/ ,/,/g
+s/, /,/g
+s/^,//
+s/,$//'
+else
+  sqlplus  -s ${user}/${passwd}@$dbname < $file | sed '
+/^$/d
+/---/d
+s/[ 	][ 	]*/ /g
+s/^[ 	]*//'  
+fi
+
+rm -f $file

@@ -1,0 +1,30 @@
+#!/bin/sh
+
+DBMS=$1; shift
+SERVER=$1; shift
+DB=$1; shift
+USER=$1; shift
+PASS=$1; shift
+
+ODSQUERY=$DSQUERY
+
+if [ $DBMS = "sybase" ]
+then
+  DSQUERY=$SERVER
+  export DSQUERY
+  for i
+  do
+    echo `basename $i`
+    sh $i $DB $USER $PASS
+  done
+  
+  DSQUERY=$ODSQUERY
+  export DSQUERY
+else
+  TS=$1; shift
+  for i
+  do
+    echo `basename $i`
+    sqlplus -s ${USER}/${PASS}@${DB} @${i} $TS < /dev/null
+  done 
+fi

@@ -1,0 +1,28 @@
+#!/home/xcs0998/bin/rc
+
+if(~ $#* 1){
+	re=$1
+}else{
+	re=/in/ce
+}
+
+cd $TDB
+iarx -s , tick |secs |tock -r | s2d |9sed 's/^[0-9]+	/&&/' |sort -t'	' -n >tot
+ iarx -2 $re Object|eff |map -r stat | grep dead  |map -ro comment |map -j desc|map -j tot  |map -jo est  |map -jo Progress|awk '
+BEGIN {
+	FS="\t"
+	"date" | getline now
+	print "<html>\n<head>\n<title>Ipex Task Completes</title>\n</head>\n<body>"
+	print "<h3>IPEX Task Completes </h3>"
+	print "Last updated: " now 
+	print "<a href=cbj.html>IPEX Task List</a>"
+	print "<table border=1><tr><th>Task<th>State<th>Estimate<th>Actual (CJ)<th>Headline<th>Comments"
+}
+{	print "<tr>"
+	for (i=2; i<=NF; i++)
+		print "<td>", $i
+	print "</tr>"
+}
+END {print "</table>\n</body>\n</html>"}
+' > /pw/data/tphtml/military_pubs/cbj1.html 
+

@@ -1,0 +1,7 @@
+#!/home/xcs0998/bin/rc
+
+cd $h/ped
+for (i in `{cat rellist}) {
+	now=`{date -n}
+	ci -l -q -m ^ $now -t-'zzzz' $i
+}

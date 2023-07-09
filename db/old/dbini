@@ -1,0 +1,9 @@
+#!/bin/sh
+equ="equery $RDB_SERV $RDB_CUST $RDB_USER $RDB_PASS"
+
+case $# in
+2) tbl=$1 ;;
+*) echo "Usage: dbinit TABLENAME csv-file" 1>&2; exit 1 ;;
+esac
+
+awk -f init.awk -v table=$tbl $2 | $equ

@@ -1,0 +1,76 @@
+#!/bin/sh
+# hq.awk: hierarchy query
+# prints the entire tree for a mtching query
+# hq degree field value
+
+argmatch=$1
+shift
+
+awk '
+BEGIN {FS=","
+  OFS=","
+  stackp = 0
+  tot = 0
+}
+
+{
+    deg[$1]++
+#    print "d ", $1,  deg[$1]
+}
+
+$1 == 2 {   # attribute function
+    # dont care whats on the stack just do the match
+    # and put the result on the stack
+    if (tot "," $0 ~ /'$argmatch'/)  {
+        line[++stackp] = $0 
+        stk[++top] = 1
+    } else {
+	stk[++top] = 0
+    }
+#    print "s " stk[top] 
+}
+
+$1 == 1 {   # column function
+    # pop the values for each attribute on the stack and add them
+    # then do the match, push the result back on the stack
+#    print top - deg[2], top, deg[2]
+    tot = 0
+    for (; top > top - deg[2]; top--) {
+	deg[2]--
+	tot += stk[top]
+    }
+#    print "t " tot
+    if (tot "," $0 ~ /'$argmatch'/)  {
+        line[++stackp] = $0 
+	stk[++top] = 1
+	frontp = stackp
+    } else{
+	stackp = frontp
+	stk[++top] = 0
+    }
+#    print "s " stk[top] 
+}
+
+$1 == 0 {    # table function
+    # pop the values for each column on the stack and add them
+    # then do the match, print the tree if its true
+    tot = 0
+    for (; top > top - deg[1]; top--) {
+	deg[1]--
+	tot += stk[top]
+    }
+#    print "t " tot
+    if (tot "," $0 ~ /'$argmatch'/)  {
+        line[++stackp] = $0 
+	pstack()
+    }
+    frontp = 0
+    stackp = 0
+}
+
+func pstack(   i) {
+    for (i = 1; i <= stackp; i++ ) {
+        print line[i]
+	line[i] = ""
+   }
+}' $*

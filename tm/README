@@ -1,0 +1,54 @@
+Time database - Legend
+
+slice  - a slice of valid time  (iarx -i 1)
+trice  - slice transaction time (iarx -i 0)
+series - periodic time slice of valid time
+tock   - sum the b-value of a relation
+map    - temporal join
+arx    - lookup a-value in relation  (iarx -i 2)
+xrb    - lookup b-value in relation  (iarx -i 3)
+latest - find latest a-value in relation
+eff    - set the time (effective date) to now in every tuple
+secs   - calculate seconds difference between pairs of tuples
+look   - basis for slice, series, iarx
+ted    - temporal editor
+mkinv  - make inversion from temporal relation
+mktime - convert date to seconds
+invert - invert a binary relation
+trans  - transaction time for rows
+range  - convert (yyyymmdd,yyyymmdd) format into (seconds, seconds)
+awk    - general purpose processing language
+rc     - query language; pipelines
+grep   - match any regexp
+toggle - 
+
+split
+insert
+techo
+
+Applications
+tick
+add
+wt
+queue
+est
+act
+ls
+last
+pwd
+pwp
+text
+fork
+; slice |secs |tee t1 |gmap pcs |gmap -r tes |tee t2 |invert |gmap pcschg |gmap -r pcsdesc > t3
+; join -t'	' t1 t2 | join -t'	' - t3 | awk -F'	' -f $h/cmd/db/table.awk
+
+
+	slice |secs |tee t1\
+	|gmap pcs |gmap -r tes |tee t2 \
+	|invert |gmap pcschg |gmap -r pcsdesc |tjoin t1 t2 -
+
+toggle condition
+
+if toggle(target) == 1
+  print
+  toggle[target]

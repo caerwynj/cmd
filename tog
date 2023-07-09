@@ -1,0 +1,29 @@
+#!/home/xcs0998/bin/rc
+
+inv=$1
+shift
+awk -v 'inv='$inv '
+BEGIN{FS=""; OFS="\t"; toggle=0}
+{	pair[toggle]=$0
+	if(pair[toggle] == pair[toggle?0:1]){
+		pair[toggle]=pair[toggle?0:1]=""
+	}else{
+		if(pair[toggle?0:1] != "")
+			fmt(pair[toggle?0:1])
+	}
+	toggle = toggle?0:1
+}
+END{	if(pair[toggle?0:1] != "")
+		fmt(pair[toggle?0:1])
+}
+func fmt(s){
+	split(s, t, "\t")
+	if(inv==1)
+		print t[1], t[2], t[3]
+	else if(inv==2)
+		print t[2], t[1], t[3]
+	else if(inv==3)
+		print t[2], t[3], t[1]
+	else if(inv==4)
+		print t[3], t[2], t[1]
+}' $*

@@ -1,0 +1,22 @@
+#!/home/xcs0998/bin/rc
+
+awk '
+BEGIN{FS="\t"; OFS="\t"}
+NR==1{
+	last[1]=$1; last[2]=$2; last[3]=$3; id=$2
+}
+NR!=1 && $2 != id {
+	plast()
+	last[1]=$1; last[2]=$2; last[3]=$3; id=$2
+}
+NR!=1 && $2 == id{
+	last[1]=$1; last[2]=$2; last[3]=$3
+}
+END{
+	plast()
+}
+
+func plast(){
+	print last[1], last[2], last[3]
+}
+' $*

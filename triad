@@ -1,0 +1,10 @@
+#!/home/xcs0998/bin/rc
+
+now=`{date -n}
+tab='	'
+if(~ $#* 3) {
+	echo $1 ^ $tab ^ $2 ^ $tab ^ $3 
+} 
+if not {
+	echo $now ^ $tab ^ $1 ^ $tab ^ $2
+}

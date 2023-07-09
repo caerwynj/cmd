@@ -1,0 +1,26 @@
+#!/home/xcs0998/bin/rc
+
+dflag=''
+for (i in $*) {
+	switch ($i) {
+		case -*
+			dflag=$i
+		case *
+			files = ($files $i)
+	}
+}
+d=`{pwd | sed -e 's|/home/xcs0998||'}
+
+for (i in $files) {
+	{ls -d -t -1 -l $i; ls -d -t -1 -l $h/dump/*/*$d/$i} | awk -v dflag'='$dflag '
+NR==1 {pair[0]=$9; toggle = 1}
+{printf("%s %2s %s %s %s\n", $6, $7, $8, $9, $5)}
+NR!=1 && dflag != "" {
+	pair[toggle]=$9
+	system("diff " dflag " " pair[toggle ? 0 : 1] " " pair[toggle])
+	toggle = toggle ? 0 : 1
+}
+'
+
+}
+

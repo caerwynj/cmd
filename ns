@@ -1,0 +1,8 @@
+#!/home/xcs0998/bin/rc
+# ns - namespace; list symbolic links within my home dir
+
+if (~ $#* 0) {
+	ls -ld $h/n/* >[2]/dev/null| awk '/->/{print "bind " $11 " " $9}'
+} else {
+	ls -ld $1/* | awk '/->/{print "bind " $11 " " $9}'
+}

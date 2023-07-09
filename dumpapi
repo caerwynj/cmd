@@ -1,0 +1,15 @@
+#!/bin/sh
+# dump contents of all headers
+
+awk '
+BEGIN {ORS=""}
+
+!/#/ && /EXPORT/,/;/ {
+    print $0
+}
+/;/ {print "\n"}
+' $* | sed '
+#s/\/\*[^\/]*\*\///g
+s/[ 	][ 	]*/ /g
+/^$/d' 
+

@@ -1,0 +1,29 @@
+#!/bin/sh
+# randcol - given a schemafile and a list of random numbers write out
+# a random list of table,column pair 
+
+cols=/var/tmp/randcol.cols.$$
+nums=/var/tmp/randcol.nums.$$
+trap 'rm -f $cols $nums' 1 2 15
+
+case $# in
+0) echo 'Usage: randcol randnumfile <schemafiles ...>' 1>&2; exit 2;;
+*) rand=$1; shift;;
+esac
+
+awk '
+BEGIN {FS=","; OFS=","
+  ok=0
+  cnt=1
+}
+/^0,tbl,.*,2$/ {tbl=$3; ok=1}
+/^1,col,.*,2$/ && (ok == 1) {print "," cnt++, tbl, $3}
+/^0,tbl,.*,(1|0|3)$/ {ok=0}
+' $* > $cols
+
+sed '
+s/^/,/
+s/$/,/' $rand > $nums
+grep -f $nums $cols | sed 's/,[0-9]*,//'
+
+rm -f $cols $nums

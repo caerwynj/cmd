@@ -1,0 +1,11 @@
+#!/bin/sh
+# cntrec - counts the number of rows in each table given as intput
+# reads standard input, expects one table name per line
+
+term="/"
+
+while read table
+do
+  echo "select '$table', count(*) from $table\n$term\n"
+done | query $*
+

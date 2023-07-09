@@ -1,0 +1,3 @@
+#!/home/xcs0998/bin/rc
+
+exec wily -f /home/xcs0998/lib/Xg/lucm/unicode.8.font -F /home/xcs0998/lib/Xg/pelm/unicode.8.font $* 

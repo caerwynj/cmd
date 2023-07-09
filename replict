@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# find tables that are replicated across the adm cat cust dbs
+
+grep '^0' $* | cut -d',' -f3 | sort | uniq -d | xargs -l1 -i grep {} $*
+
